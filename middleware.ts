@@ -42,19 +42,25 @@ export async function middleware(request: NextRequest) {
     // Handle auth errors gracefully
     if (error) {
       console.error("Auth middleware error:", error);
+
       // If there's an auth error, treat as unauthenticated
       if (request.nextUrl.pathname.startsWith("/dashboard")) {
         const loginUrl = new URL("/login", request.url);
+
         loginUrl.searchParams.set("redirectTo", request.nextUrl.pathname);
+
         return NextResponse.redirect(loginUrl);
       }
+
       return response;
     }
 
     // Protect dashboard routes
     if (!user && request.nextUrl.pathname.startsWith("/dashboard")) {
       const loginUrl = new URL("/login", request.url);
+
       loginUrl.searchParams.set("redirectTo", request.nextUrl.pathname);
+
       return NextResponse.redirect(loginUrl);
     }
 
@@ -72,6 +78,7 @@ export async function middleware(request: NextRequest) {
     return response;
   } catch (error) {
     console.error("Middleware error:", error);
+
     // On any error, allow the request to proceed
     return response;
   }
@@ -80,6 +87,7 @@ export async function middleware(request: NextRequest) {
 // Helper function to check if the current path is an auth page
 function isAuthPage(pathname: string): boolean {
   const authPages = ["/login", "/signup", "/reset-password"];
+
   return authPages.some((page) => pathname.startsWith(page));
 }
 
@@ -87,6 +95,7 @@ function isAuthPage(pathname: string): boolean {
 function isValidRedirectUrl(url: string): boolean {
   try {
     const parsed = new URL(url, "http://localhost:3000");
+
     // Only allow relative URLs or same-origin URLs
     return parsed.pathname.startsWith("/") && !parsed.pathname.startsWith("//");
   } catch {

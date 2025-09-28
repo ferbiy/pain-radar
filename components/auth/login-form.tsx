@@ -47,6 +47,7 @@ function LoginFormContent({ onSubmit }: LoginFormProps) {
 
     try {
       const result = await onSubmit(data);
+
       if (result?.error) {
         setError(result.error);
       } else {
@@ -69,6 +70,7 @@ function LoginFormContent({ onSubmit }: LoginFormProps) {
   const isValidRedirectUrl = (url: string): boolean => {
     try {
       const parsed = new URL(url, window.location.origin);
+
       return (
         parsed.pathname.startsWith("/") && !parsed.pathname.startsWith("//")
       );

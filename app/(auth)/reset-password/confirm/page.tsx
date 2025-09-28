@@ -35,11 +35,13 @@ function ResetPasswordConfirmContent() {
 
     if (password !== confirmPassword) {
       setError("Passwords do not match");
+
       return;
     }
 
     if (password.length < 6) {
       setError("Password must be at least 6 characters long");
+
       return;
     }
 

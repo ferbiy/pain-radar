@@ -36,5 +36,7 @@ export const resetPasswordSchema = z.object({
 });
 
 export type LoginFormData = z.infer<typeof loginSchema>;
+
 export type SignUpFormData = z.infer<typeof signUpSchema>;
+
 export type ResetPasswordFormData = z.infer<typeof resetPasswordSchema>;

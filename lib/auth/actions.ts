@@ -35,6 +35,7 @@ export async function signUp(email: string, password: string) {
 
 export async function signOut() {
   const supabase = await createServerSupabaseClient();
+
   await supabase.auth.signOut();
   redirect("/");
 }

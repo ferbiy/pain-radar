@@ -24,6 +24,7 @@ export function ProtectedRoute({
       // Add current path as redirect parameter
       const currentPath = window.location.pathname;
       const redirectUrl = `${redirectTo}?redirectTo=${encodeURIComponent(currentPath)}`;
+
       router.push(redirectUrl);
     }
   }, [user, loading, router, redirectTo]);
