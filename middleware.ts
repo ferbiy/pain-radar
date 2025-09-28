@@ -47,7 +47,10 @@ export async function middleware(request: NextRequest) {
       if (request.nextUrl.pathname.startsWith("/dashboard")) {
         const loginUrl = new URL("/login", request.url);
 
-        loginUrl.searchParams.set("redirectTo", request.nextUrl.pathname);
+        // Preserve full path including query params and hash
+        const fullPath = `${request.nextUrl.pathname}${request.nextUrl.search}${request.nextUrl.hash}`;
+
+        loginUrl.searchParams.set("redirectTo", fullPath);
 
         return NextResponse.redirect(loginUrl);
       }
@@ -59,7 +62,10 @@ export async function middleware(request: NextRequest) {
     if (!user && request.nextUrl.pathname.startsWith("/dashboard")) {
       const loginUrl = new URL("/login", request.url);
 
-      loginUrl.searchParams.set("redirectTo", request.nextUrl.pathname);
+      // Preserve full path including query params and hash
+      const fullPath = `${request.nextUrl.pathname}${request.nextUrl.search}${request.nextUrl.hash}`;
+
+      loginUrl.searchParams.set("redirectTo", fullPath);
 
       return NextResponse.redirect(loginUrl);
     }

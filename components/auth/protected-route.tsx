@@ -21,11 +21,16 @@ export function ProtectedRoute({
 
   useEffect(() => {
     if (!loading && !user) {
-      // Add current path as redirect parameter
-      const currentPath = window.location.pathname;
-      const redirectUrl = `${redirectTo}?redirectTo=${encodeURIComponent(currentPath)}`;
+      // Preserve full path including query params and hash
+      const { pathname, search, hash } = window.location;
+      const currentPath = `${pathname}${search}${hash}`;
 
-      router.push(redirectUrl);
+      // Safely construct redirect URL to handle existing query params
+      const url = new URL(redirectTo, window.location.origin);
+
+      url.searchParams.set("redirectTo", currentPath);
+
+      router.push(`${url.pathname}${url.search}${url.hash}`);
     }
   }, [user, loading, router, redirectTo]);
 
