@@ -69,10 +69,18 @@ function LoginFormContent({ onSubmit }: LoginFormProps) {
   // Helper function to validate redirect URLs (same as middleware)
   const isValidRedirectUrl = (url: string): boolean => {
     try {
+      // Reject protocol-relative URLs immediately
+      if (url.startsWith("//")) {
+        return false;
+      }
+
       const parsed = new URL(url, window.location.origin);
 
+      // Only allow same-origin URLs with valid paths
       return (
-        parsed.pathname.startsWith("/") && !parsed.pathname.startsWith("//")
+        parsed.origin === window.location.origin &&
+        parsed.pathname.startsWith("/") &&
+        !parsed.pathname.startsWith("//")
       );
     } catch {
       return false;

@@ -74,7 +74,7 @@ export async function middleware(request: NextRequest) {
     if (user && isAuthPage(request.nextUrl.pathname)) {
       const redirectTo = request.nextUrl.searchParams.get("redirectTo");
       const redirectUrl =
-        redirectTo && isValidRedirectUrl(redirectTo)
+        redirectTo && isValidRedirectUrl(redirectTo, request.nextUrl.origin)
           ? new URL(redirectTo, request.url)
           : new URL("/dashboard", request.url);
 
@@ -98,12 +98,21 @@ function isAuthPage(pathname: string): boolean {
 }
 
 // Helper function to validate redirect URLs (security measure)
-function isValidRedirectUrl(url: string): boolean {
+function isValidRedirectUrl(url: string, allowedOrigin: string): boolean {
   try {
-    const parsed = new URL(url, "http://localhost:3000");
+    // Reject protocol-relative URLs immediately
+    if (url.startsWith("//")) {
+      return false;
+    }
 
-    // Only allow relative URLs or same-origin URLs
-    return parsed.pathname.startsWith("/") && !parsed.pathname.startsWith("//");
+    const parsed = new URL(url, allowedOrigin);
+
+    // Only allow same-origin URLs with valid paths
+    return (
+      parsed.origin === allowedOrigin &&
+      parsed.pathname.startsWith("/") &&
+      !parsed.pathname.startsWith("//")
+    );
   } catch {
     return false;
   }
