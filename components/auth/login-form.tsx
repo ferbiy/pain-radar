@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useState, Suspense } from "react";
 import Link from "next/link";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Button } from "@/components/ui/button";
@@ -15,17 +16,22 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { loginSchema, type LoginFormData } from "@/lib/validations/auth";
+import { LoadingPage } from "@/components/ui/loading";
 
 interface LoginFormProps {
   onSubmit: (data: LoginFormData) => Promise<{ error?: string } | void>;
 }
 
-export function LoginForm({ onSubmit }: LoginFormProps) {
+function LoginFormContent({ onSubmit }: LoginFormProps) {
   // States
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
   // Hooks
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const redirectTo = searchParams.get("redirectTo");
+
   const {
     register,
     handleSubmit,
@@ -41,13 +47,43 @@ export function LoginForm({ onSubmit }: LoginFormProps) {
 
     try {
       const result = await onSubmit(data);
+
       if (result?.error) {
         setError(result.error);
+      } else {
+        // Successful login - redirect will be handled by middleware or server action
+        // But we can also handle it here as a fallback
+        if (redirectTo && isValidRedirectUrl(redirectTo)) {
+          router.push(redirectTo);
+        } else {
+          router.push("/dashboard");
+        }
       }
     } catch {
       setError("An unexpected error occurred");
     } finally {
       setLoading(false);
+    }
+  };
+
+  // Helper function to validate redirect URLs (same as middleware)
+  const isValidRedirectUrl = (url: string): boolean => {
+    try {
+      // Reject protocol-relative URLs immediately
+      if (url.startsWith("//")) {
+        return false;
+      }
+
+      const parsed = new URL(url, window.location.origin);
+
+      // Only allow same-origin URLs with valid paths
+      return (
+        parsed.origin === window.location.origin &&
+        parsed.pathname.startsWith("/") &&
+        !parsed.pathname.startsWith("//")
+      );
+    } catch {
+      return false;
     }
   };
 
@@ -70,6 +106,14 @@ export function LoginForm({ onSubmit }: LoginFormProps) {
         </CardHeader>
 
         <CardContent>
+          {redirectTo && (
+            <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-md">
+              <p className="text-sm text-blue-800">
+                Please sign in to continue to your requested page.
+              </p>
+            </div>
+          )}
+
           <form className="space-y-4" onSubmit={handleSubmit(handleFormSubmit)}>
             <div className="space-y-2">
               <Label htmlFor="email">Email address</Label>
@@ -125,5 +169,13 @@ export function LoginForm({ onSubmit }: LoginFormProps) {
         </CardContent>
       </Card>
     </div>
+  );
+}
+
+export function LoginForm({ onSubmit }: LoginFormProps) {
+  return (
+    <Suspense fallback={<LoadingPage text="Loading login form..." />}>
+      <LoginFormContent onSubmit={onSubmit} />
+    </Suspense>
   );
 }

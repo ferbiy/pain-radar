@@ -16,52 +16,51 @@ Using Cursor, develop a minimally viable SaaS that helps a first-time founder co
 
 ⚠ **Data collection from Reddit** may require tokens/limits. Allowed:
 
-* connect the official Reddit API, **or**
-* use a small prepared mock/snapshot (JSON).
+- connect the official Reddit API, **or**
+- use a small prepared mock/snapshot (JSON).
 
 ---
 
 ## Functional requirements (MVP)
 
-* **Landing page (single page)** describing the product. Take inspiration from Tosnos SaaS Landing (Dribbble)—don’t copy; make a simple, neat layout (Hero block, value proposition, CTA “Get started”).
-* **Authentication:** sign up, log in, log out (Supabase Auth).
-* **Recommendations feed:** a list of fresh product ideas with a topic filter (e.g., devtools, health, education, etc.). Fields:
+- **Landing page (single page)** describing the product. Take inspiration from Tosnos SaaS Landing (Dribbble)—don’t copy; make a simple, neat layout (Hero block, value proposition, CTA “Get started”).
+- **Authentication:** sign up, log in, log out (Supabase Auth).
+- **Recommendations feed:** a list of fresh product ideas with a topic filter (e.g., devtools, health, education, etc.). Fields:
+  - idea name
+  - short pitch (1–2 sentences)
+  - key pain/insight
+  - sources (subreddit/link)
+  - score (0–100)
+  - “new” badge
 
-  * idea name
-  * short pitch (1–2 sentences)
-  * key pain/insight
-  * sources (subreddit/link)
-  * score (0–100)
-  * “new” badge
-* **E-mail subscriptions:** a subscription form and topic-based filter settings (e.g., devtools, health, education, etc.).
-* **E-mail integration:** connect any popular e-mail SaaS (e.g., Resend, Mailgun, SendGrid, Postmark). You don’t have to test real sending, but the API client and integration code must be correct (keys/env vars via .env).
-* **Unsubscribe:** proper e-mail unsubscribe via link in the message or from the profile.
-* **Idea generation and scoring via LLM:** use a popular LLM (OpenAI/Gemini/etc.). Extract prompts and settings into config; keep response typing strict.
+- **E-mail subscriptions:** a subscription form and topic-based filter settings (e.g., devtools, health, education, etc.).
+- **E-mail integration:** connect any popular e-mail SaaS (e.g., Resend, Mailgun, SendGrid, Postmark). You don’t have to test real sending, but the API client and integration code must be correct (keys/env vars via .env).
+- **Unsubscribe:** proper e-mail unsubscribe via link in the message or from the profile.
+- **Idea generation and scoring via LLM:** use a popular LLM (OpenAI/Gemini/etc.). Extract prompts and settings into config; keep response typing strict.
 
 ---
 
 ## Technologies
 
-* GitHub (repository with commit history)
-* React + Node.js + TypeScript (Next.js is welcome but not required)
-* Supabase (Auth + Postgres; Supabase Hosted is fine)
-* LLM (any popular provider)
-* E-mail SaaS (any popular one; integrate via SDK/API)
-* Cursor (required; working in AI mode is part of the task)
+- GitHub (repository with commit history)
+- React + Node.js + TypeScript (Next.js is welcome but not required)
+- Supabase (Auth + Postgres; Supabase Hosted is fine)
+- LLM (any popular provider)
+- E-mail SaaS (any popular one; integrate via SDK/API)
+- Cursor (required; working in AI mode is part of the task)
 
 ---
 
 ## Required artifacts (for evaluation)
 
-* GitHub repository (public or link-accessible).
-* `.cursor/` folder with:
+- GitHub repository (public or link-accessible).
+- `.cursor/` folder with:
+  - **rules.md** — your rules/constraints for the AI (architecture, style, commit conventions).
+  - **PROMPTS.md** — key prompts (5–10 items) with brief context and outcome.
+  - full interaction history with Cursor: export using external tools.
 
-  * **rules.md** — your rules/constraints for the AI (architecture, style, commit conventions).
-  * **PROMPTS.md** — key prompts (5–10 items) with brief context and outcome.
-  * full interaction history with Cursor: export using external tools.
-* **README.md** containing:
-
-  * how to run locally
+- **README.md** containing:
+  - how to run locally
 
 ---
 
@@ -73,19 +72,19 @@ Your task is to deliver the maximum useful functionality within up to 8 hours. P
 
 ## What to send back
 
-* Link to the GitHub repository.
-* Export/screenshots of the Cursor history + the `.cursor/` folder.
-* README.md.
+- Link to the GitHub repository.
+- Export/screenshots of the Cursor history + the `.cursor/` folder.
+- README.md.
 
 ---
 
 **Contents (quick navigation):**
 
-* Test Task: SaaS Generator of Product Ideas from Reddit
-* Goal
-* How it should work (MVP flow)
-* Functional requirements (MVP)
-* Technologies
-* Required artifacts (for evaluation)
-* Prioritization hint
-* What to send back
+- Test Task: SaaS Generator of Product Ideas from Reddit
+- Goal
+- How it should work (MVP flow)
+- Functional requirements (MVP)
+- Technologies
+- Required artifacts (for evaluation)
+- Prioritization hint
+- What to send back

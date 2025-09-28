@@ -609,7 +609,7 @@ export default function LoginPage() {
 - Create user menu dropdown
 - Handle auth state changes
 
-### Task 3.4: Set Up Protected Routes
+### Task 3.4: Set Up Protected Routes (DONE)
 
 - Create middleware for dashboard routes
 - Implement redirect logic

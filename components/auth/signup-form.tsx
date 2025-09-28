@@ -41,6 +41,7 @@ export function SignUpForm({ onSubmit }: SignUpFormProps) {
 
     try {
       const result = await onSubmit(data);
+
       if (result?.error) {
         setError(result.error);
       }

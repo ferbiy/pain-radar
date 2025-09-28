@@ -44,6 +44,7 @@ export function ResetPasswordForm({ onSubmit }: ResetPasswordFormProps) {
 
     try {
       const result = await onSubmit(data);
+
       if (result?.error) {
         setError(result.error);
       }
