@@ -1,4 +1,5 @@
-** SUPABASE **
+SUPABASE
+
 To generate types use
 
 ```shell
