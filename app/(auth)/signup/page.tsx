@@ -1,3 +1,5 @@
+"use client";
+
 import { signUp } from "@/lib/auth/actions";
 import { SignUpForm } from "@/components/auth/signup-form";
 import type { SignUpFormData } from "@/lib/validations/auth";
