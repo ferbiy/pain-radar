@@ -138,7 +138,7 @@ export const env = {
 };
 ```
 
-### Task 1.4: Set Up Type Definitions
+### Task 1.4: Set Up Type Definitions (DONE)
 
 **Create type definition files:**
 
@@ -242,7 +242,7 @@ export * from "./workflow";
 
 ## Epic 2: Supabase Setup
 
-### Task 2.1: Initialize Supabase Project
+### Task 2.1: Initialize Supabase Project (DONE)
 
 **Step 1: Create Supabase Account and Project**
 
@@ -283,7 +283,7 @@ export * from "./workflow";
    - `http://localhost:3000/dashboard`
    - `http://localhost:3000/auth/callback`
 
-### Task 2.2: Create Database Schema
+### Task 2.2: Create Database Schema (DONE)
 
 **Navigate to SQL Editor in Supabase Dashboard and create the following tables:**
 
