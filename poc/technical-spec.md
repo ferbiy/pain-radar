@@ -1,11 +1,13 @@
 # Pain Radar - Technical Specification
 
 ## Project Overview
+
 A SaaS platform that helps first-time founders discover product ideas by analyzing Reddit discussions about user problems and pain points.
 
 ## Tech Stack Decisions
 
 ### Core Framework
+
 - **Next.js 14+ with App Router**
   - Full-stack TypeScript support
   - Server-side rendering for SEO
@@ -14,6 +16,7 @@ A SaaS platform that helps first-time founders discover product ideas by analyzi
   - Easy Vercel deployment
 
 ### Database & Authentication
+
 - **Supabase**
   - PostgreSQL for relational data
   - Built-in authentication (email/password)
@@ -22,13 +25,16 @@ A SaaS platform that helps first-time founders discover product ideas by analyzi
   - Hosted solution (no self-hosting needed)
 
 ### Data Sources
+
 - **Reddit API Integration**
   - Official Reddit API only (no mock data)
+  - Axios-based HTTP client for clean API handling
   - Simple rate limiting (if needed)
   - Subreddit popularity tracking
-  - OAuth2 authentication flow
+  - OAuth2 authentication flow with automatic token refresh
 
 ### AI/LLM Provider
+
 - **OpenAI GPT-5-mini**
   - Latest mini model with improved capabilities
   - High-quality idea generation
@@ -37,6 +43,7 @@ A SaaS platform that helps first-time founders discover product ideas by analyzi
   - JSON mode for consistent outputs
 
 ### Email Service
+
 - **Resend**
   - Developer-friendly API
   - React Email template support
@@ -45,6 +52,7 @@ A SaaS platform that helps first-time founders discover product ideas by analyzi
   - Easy integration with Next.js
 
 ### UI/Styling
+
 - **Tailwind CSS + shadcn/ui**
   - Rapid prototyping
   - Consistent design system
@@ -52,6 +60,7 @@ A SaaS platform that helps first-time founders discover product ideas by analyzi
   - Mobile-responsive by default
 
 ### Additional Libraries
+
 - **Zod** - Schema validation and type inference
 - **TanStack Query** - Data fetching and caching
 - **React Hook Form** - Form state management
@@ -59,6 +68,7 @@ A SaaS platform that helps first-time founders discover product ideas by analyzi
 - **Vercel Cron** - Scheduled jobs
 
 ### AI Agent Orchestration
+
 - **LangGraph**
   - Multi-agent workflow management
   - Stateful agent coordination
@@ -109,18 +119,18 @@ CREATE TABLE ideas (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW(),
-  
+
   -- Core fields
   name VARCHAR(200) NOT NULL,
   pitch TEXT NOT NULL,
   pain_point TEXT NOT NULL,
   target_audience VARCHAR(200),
-  
+
   -- Metadata
   sources JSONB DEFAULT '[]', -- Array of {subreddit, post_url, post_title}
   score INTEGER CHECK (score >= 0 AND score <= 100),
   category VARCHAR(50),
-  
+
   -- Tracking
   is_new BOOLEAN DEFAULT true,
   view_count INTEGER DEFAULT 0
@@ -161,22 +171,26 @@ CREATE TABLE email_logs (
 ## Key Design Decisions
 
 ### 1. **Monolithic Architecture**
+
 - Single Next.js application for simplicity
 - Easier to deploy and maintain
 - Sufficient for MVP scale
 
 ### 2. **Hybrid Rendering Strategy**
+
 - SSR/ISR/SSG for landing page only (SEO optimization)
 - Client-Side Rendering (CSR) for dashboard and authenticated pages
 - Faster development time for POC
 - Optimal performance where it matters most
 
 ### 3. **Type Safety**
+
 - End-to-end TypeScript
 - Zod schemas for runtime validation
 - Typed API responses
 
 ### 4. **Environment-Based Configuration**
+
 ```env
 # .env.local
 NEXT_PUBLIC_SUPABASE_URL=
@@ -192,6 +206,7 @@ REDDIT_PASSWORD=
 ```
 
 ### 5. **API Design**
+
 - RESTful endpoints for CRUD operations
 - Server Actions for form submissions
 - Webhook endpoints for external services
@@ -199,6 +214,7 @@ REDDIT_PASSWORD=
 ## MVP Feature Prioritization (8-hour breakdown)
 
 ### Phase 1: Foundation (Hours 1-2)
+
 - [ ] Initialize Next.js project with TypeScript
 - [ ] Set up Supabase project and auth
 - [ ] Configure environment variables
@@ -206,6 +222,7 @@ REDDIT_PASSWORD=
 - [ ] Create base layout and routing structure
 
 ### Phase 2: Landing & Auth (Hours 3-4)
+
 - [ ] Design and implement landing page
 - [ ] Create auth pages (signup/login)
 - [ ] Implement Supabase auth integration
@@ -213,6 +230,7 @@ REDDIT_PASSWORD=
 - [ ] Create basic navigation
 
 ### Phase 3: Core Features (Hours 5-6)
+
 - [ ] Design ideas feed UI
 - [ ] Implement Reddit API integration
 - [ ] Set up LangGraph agent workflow
@@ -221,6 +239,7 @@ REDDIT_PASSWORD=
 - [ ] Create scoring algorithm
 
 ### Phase 4: Subscriptions (Hour 7)
+
 - [ ] Build subscription management UI
 - [ ] Implement email subscription logic
 - [ ] Create topic filtering
@@ -228,6 +247,7 @@ REDDIT_PASSWORD=
 - [ ] Add unsubscribe functionality
 
 ### Phase 5: Polish & Deploy (Hour 8)
+
 - [ ] Error handling and loading states
 - [ ] Basic responsive design fixes
 - [ ] Write README documentation
@@ -238,18 +258,18 @@ REDDIT_PASSWORD=
 
 ```typescript
 // Public APIs
-GET  /api/ideas          // List ideas (with filters)
-GET  /api/ideas/[id]     // Single idea details
+GET / api / ideas; // List ideas (with filters)
+GET / api / ideas / [id]; // Single idea details
 
 // Protected APIs
-POST /api/subscriptions  // Create subscription
-PUT  /api/subscriptions  // Update preferences
-DELETE /api/subscriptions // Unsubscribe
+POST / api / subscriptions; // Create subscription
+PUT / api / subscriptions; // Update preferences
+DELETE / api / subscriptions; // Unsubscribe
 
 // Webhooks
-POST /api/webhooks/reddit // Reddit data ingestion
-POST /api/cron/generate   // Scheduled idea generation
-POST /api/cron/email      // Scheduled email dispatch
+POST / api / webhooks / reddit; // Reddit data ingestion
+POST / api / cron / generate; // Scheduled idea generation
+POST / api / cron / email; // Scheduled email dispatch
 ```
 
 ## LangGraph Agent Architecture
@@ -262,21 +282,25 @@ A comprehensive multi-agent system using the Supervisor Pattern for coordinated 
 ### Key Components:
 
 **AI Agents (LangGraph):**
+
 1. **Supervisor Agent** - Lightweight orchestrator for linear flow
 2. **Pain Extractor Agent** - Analyzes Reddit content for problems
 3. **Idea Generator Agent** - Creates product ideas from pain points
 4. **Scoring Agent** - Evaluates idea potential (0-100 score)
 
 **Regular Services (Non-AI):**
+
 1. **Reddit API Service** - Simple HTTP client for data fetching
 2. **Email Service** - Template-based email sender
 
 ### Workflow Pattern:
+
 ```
 Reddit Fetch → Pain Extraction → Idea Generation → Scoring → Storage
 ```
 
 The architecture includes:
+
 - State management with TypeScript interfaces
 - Error recovery and retry logic
 - Quality gates and thresholds
@@ -286,6 +310,7 @@ The architecture includes:
 ## Prompt Engineering Strategy
 
 ### Idea Generation Prompt Structure
+
 ```typescript
 interface IdeaGenerationPrompt {
   painPoints: string[];
@@ -293,13 +318,14 @@ interface IdeaGenerationPrompt {
   engagement: number;
   constraints: {
     maxLength: number;
-    tone: 'professional' | 'casual';
+    tone: "professional" | "casual";
     includeFields: string[];
   };
 }
 ```
 
 ### Scoring Criteria
+
 1. **Pain Severity** (0-30 points)
 2. **Market Size** (0-25 points)
 3. **Competition** (0-20 points)

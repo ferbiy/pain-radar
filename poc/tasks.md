@@ -1,6 +1,7 @@
 # Pain Radar - Implementation Tasks
 
 ## Overview
+
 This document outlines the step-by-step implementation tasks for the Pain Radar POC, organized by epics. Each task is designed to be completed sequentially with clear deliverables.
 
 ---
@@ -10,23 +11,27 @@ This document outlines the step-by-step implementation tasks for the Pain Radar 
 ### Task 1.1: Initialize Next.js Project
 
 **Step 1: Create Next.js project with TypeScript and Tailwind**
+
 ```bash
 npx create-next-app@latest pain-radar --typescript --tailwind --app --no-src-dir
 cd pain-radar
 ```
 
 When prompted:
+
 - Would you like to use ESLint? → Yes
 - Would you like to use `src/` directory? → No (already specified)
 - Would you like to use App Router? → Yes (already specified)
 - Would you like to customize the default import alias? → No
 
 **Step 2: Install and initialize shadcn/ui**
+
 ```bash
 npx shadcn-ui@latest init
 ```
 
 When prompted:
+
 - Would you like to use TypeScript? → Yes
 - Which style would you like to use? → Default
 - Which color would you like to use as base color? → Slate
@@ -37,6 +42,7 @@ When prompted:
 - Configure the import alias for utils? → lib/utils
 
 **Step 3: Create folder structure**
+
 ```bash
 # Create all necessary directories
 mkdir -p app/\(marketing\) app/\(auth\)/login app/\(auth\)/signup
@@ -56,46 +62,56 @@ touch app/\(dashboard\)/layout.tsx
 **Note**: Install all packages without specifying versions to get the latest stable releases.
 
 **Database & Auth:**
+
 ```bash
 npm install @supabase/supabase-js @supabase/auth-helpers-nextjs @supabase/ssr
 ```
 
 **AI/LLM Integration:**
+
 ```bash
 npm install openai @langchain/langgraph @langchain/core
 ```
 
 **Email Service:**
+
 ```bash
 npm install resend @react-email/components @react-email/render
 ```
 
 **Form & Validation:**
+
 ```bash
 npm install zod react-hook-form @hookform/resolvers
 ```
 
 **Data Fetching:**
+
 ```bash
 npm install @tanstack/react-query
 ```
 
 **Reddit API:**
+
 ```bash
-npm install snoowrap
+npm install axios
+npm install -D @types/axios
 ```
 
 **Additional Utilities:**
+
 ```bash
 npm install date-fns nanoid
 ```
 
 **Development Dependencies:**
+
 ```bash
 npm install -D @types/node
 ```
 
 ### Task 1.3: Environment Configuration
+
 - Create `.env.local` file
 - Set up environment variable types
 - Create configuration module
@@ -106,19 +122,19 @@ export const env = {
   supabase: {
     url: process.env.NEXT_PUBLIC_SUPABASE_URL!,
     anonKey: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    serviceKey: process.env.SUPABASE_SERVICE_KEY!
+    serviceKey: process.env.SUPABASE_SERVICE_KEY!,
   },
   openai: {
-    apiKey: process.env.OPENAI_API_KEY!
+    apiKey: process.env.OPENAI_API_KEY!,
   },
   reddit: {
     clientId: process.env.REDDIT_CLIENT_ID!,
     clientSecret: process.env.REDDIT_CLIENT_SECRET!,
-    userAgent: process.env.REDDIT_USER_AGENT!
+    userAgent: process.env.REDDIT_USER_AGENT!,
   },
   resend: {
-    apiKey: process.env.RESEND_API_KEY!
-  }
+    apiKey: process.env.RESEND_API_KEY!,
+  },
 };
 ```
 
@@ -164,7 +180,7 @@ export interface EmailLog {
   id: string;
   subscriptionId: string;
   sentAt: Date;
-  status: 'sent' | 'failed' | 'pending';
+  status: "sent" | "failed" | "pending";
   ideasSent: number;
 }
 ```
@@ -194,7 +210,12 @@ export interface RedditComment {
 // pseudocode - types/workflow.ts
 export interface WorkflowState {
   workflowId: string;
-  currentStep: 'fetching' | 'extracting' | 'generating' | 'scoring' | 'complete';
+  currentStep:
+    | "fetching"
+    | "extracting"
+    | "generating"
+    | "scoring"
+    | "complete";
   redditPosts: RedditPost[];
   painPoints: PainPoint[];
   ideas: ProductIdea[];
@@ -203,7 +224,7 @@ export interface WorkflowState {
 
 export interface PainPoint {
   description: string;
-  severity: 'low' | 'medium' | 'high';
+  severity: "low" | "medium" | "high";
   source: string;
   examples: string[];
 }
@@ -212,9 +233,9 @@ export interface PainPoint {
 ```typescript
 // pseudocode - types/index.ts
 // Re-export all types for convenient importing
-export * from './database';
-export * from './reddit';
-export * from './workflow';
+export * from "./database";
+export * from "./reddit";
+export * from "./workflow";
 ```
 
 ---
@@ -224,6 +245,7 @@ export * from './workflow';
 ### Task 2.1: Initialize Supabase Project
 
 **Step 1: Create Supabase Account and Project**
+
 1. Go to [https://supabase.com](https://supabase.com)
 2. Sign up or log in to your account
 3. Click "New project"
@@ -234,6 +256,7 @@ export * from './workflow';
    - Pricing plan: Free tier is sufficient for POC
 
 **Step 2: Configure Authentication**
+
 1. Once project is created, go to Authentication → Providers
 2. Ensure "Email" provider is enabled (should be by default)
 3. Go to Authentication → Email Templates
@@ -244,6 +267,7 @@ export * from './workflow';
      - Set "Minimum password length" to 6 (for easier testing)
 
 **Step 3: Get Project Credentials**
+
 1. Go to Settings → API
 2. Copy the following values for your `.env.local`:
    - Project URL → `NEXT_PUBLIC_SUPABASE_URL`
@@ -251,6 +275,7 @@ export * from './workflow';
    - Service role key → `SUPABASE_SERVICE_KEY` (keep this secret!)
 
 **Step 4: Configure Auth Settings for POC**
+
 1. Go to Authentication → URL Configuration
 2. Set Site URL to: `http://localhost:3000`
 3. Add to Redirect URLs:
@@ -263,6 +288,7 @@ export * from './workflow';
 **Navigate to SQL Editor in Supabase Dashboard and create the following tables:**
 
 **Table 1: `ideas`**
+
 - `id` - UUID (Primary Key, auto-generate)
 - `created_at` - TIMESTAMPTZ (default: now())
 - `updated_at` - TIMESTAMPTZ (default: now())
@@ -277,6 +303,7 @@ export * from './workflow';
 - `view_count` - INTEGER (default: 0)
 
 **Table 2: `subscriptions`**
+
 - `id` - UUID (Primary Key, auto-generate)
 - `user_id` - UUID (Foreign Key to auth.users, cascade delete)
 - `email` - VARCHAR(255) (required)
@@ -287,6 +314,7 @@ export * from './workflow';
 - `last_email_sent` - TIMESTAMPTZ (nullable)
 
 **Table 3: `reddit_sources`**
+
 - `id` - UUID (Primary Key, auto-generate)
 - `subreddit` - VARCHAR(100) (unique, required)
 - `last_checked` - TIMESTAMPTZ (nullable)
@@ -295,6 +323,7 @@ export * from './workflow';
 - `created_at` - TIMESTAMPTZ (default: now())
 
 **Table 4: `email_logs`**
+
 - `id` - UUID (Primary Key, auto-generate)
 - `subscription_id` - UUID (Foreign Key to subscriptions)
 - `sent_at` - TIMESTAMPTZ (default: now())
@@ -303,6 +332,7 @@ export * from './workflow';
 
 **Initial Data: Insert default subreddits**
 After creating tables, insert initial subreddits:
+
 - r/startups
 - r/SaaS
 - r/Entrepreneur
@@ -333,6 +363,7 @@ supabase gen types typescript --linked > types/supabase.ts
 **Note:** Your project reference can be found in Supabase Dashboard → Settings → General → Reference ID
 
 **The generated file will include:**
+
 - Database table types
 - View types
 - Function types
@@ -342,10 +373,11 @@ supabase gen types typescript --linked > types/supabase.ts
 ### Task 2.4: Set Up Supabase Client
 
 **Step 1: Create browser client for client-side usage**
+
 ```typescript
 // pseudocode - lib/supabase/client.ts
-import { createBrowserClient } from '@supabase/ssr';
-import { Database } from '@/types/supabase';
+import { createBrowserClient } from "@supabase/ssr";
+import { Database } from "@/types/supabase";
 
 export function createClient() {
   return createBrowserClient<Database>(
@@ -356,15 +388,16 @@ export function createClient() {
 ```
 
 **Step 2: Create server client for server components**
+
 ```typescript
 // pseudocode - lib/supabase/server.ts
-import { createServerClient } from '@supabase/ssr';
-import { cookies } from 'next/headers';
-import { Database } from '@/types/supabase';
+import { createServerClient } from "@supabase/ssr";
+import { cookies } from "next/headers";
+import { Database } from "@/types/supabase";
 
 export async function createServerSupabaseClient() {
   const cookieStore = cookies();
-  
+
   return createServerClient<Database>(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
@@ -377,7 +410,7 @@ export async function createServerSupabaseClient() {
           cookieStore.set({ name, value, ...options });
         },
         remove(name: string, options) {
-          cookieStore.set({ name, value: '', ...options });
+          cookieStore.set({ name, value: "", ...options });
         },
       },
     }
@@ -386,10 +419,11 @@ export async function createServerSupabaseClient() {
 ```
 
 **Step 3: Create admin client for server-side operations**
+
 ```typescript
 // pseudocode - lib/supabase/admin.ts
-import { createClient } from '@supabase/supabase-js';
-import { Database } from '@/types/supabase';
+import { createClient } from "@supabase/supabase-js";
+import { Database } from "@/types/supabase";
 
 export const supabaseAdmin = createClient<Database>(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -397,8 +431,8 @@ export const supabaseAdmin = createClient<Database>(
   {
     auth: {
       autoRefreshToken: false,
-      persistSession: false
-    }
+      persistSession: false,
+    },
   }
 );
 ```
@@ -406,82 +440,85 @@ export const supabaseAdmin = createClient<Database>(
 ### Task 2.5: Implement Auth Utilities
 
 **Step 1: Create auth actions for server components**
+
 ```typescript
 // pseudocode - lib/auth/actions.ts
-'use server';
+"use server";
 
-import { createServerSupabaseClient } from '@/lib/supabase/server';
-import { redirect } from 'next/navigation';
+import { createServerSupabaseClient } from "@/lib/supabase/server";
+import { redirect } from "next/navigation";
 
 export async function signIn(email: string, password: string) {
   const supabase = await createServerSupabaseClient();
-  
+
   const { error } = await supabase.auth.signInWithPassword({
     email,
     password,
   });
-  
+
   if (error) {
     return { error: error.message };
   }
-  
-  redirect('/dashboard');
+
+  redirect("/dashboard");
 }
 
 export async function signUp(email: string, password: string) {
   const supabase = await createServerSupabaseClient();
-  
+
   const { error } = await supabase.auth.signUp({
     email,
     password,
   });
-  
+
   if (error) {
     return { error: error.message };
   }
-  
-  redirect('/dashboard');
+
+  redirect("/dashboard");
 }
 
 export async function signOut() {
   const supabase = await createServerSupabaseClient();
   await supabase.auth.signOut();
-  redirect('/');
+  redirect("/");
 }
 ```
 
 **Step 2: Create auth hooks for client components**
+
 ```typescript
 // pseudocode - hooks/use-auth.ts
-import { useEffect, useState } from 'react';
-import { createClient } from '@/lib/supabase/client';
-import { User } from '@supabase/supabase-js';
+import { useEffect, useState } from "react";
+import { createClient } from "@/lib/supabase/client";
+import { User } from "@supabase/supabase-js";
 
 export function useAuth() {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const supabase = createClient();
-  
+
   useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
-        setUser(session?.user ?? null);
-        setLoading(false);
-      }
-    );
-    
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((event, session) => {
+      setUser(session?.user ?? null);
+      setLoading(false);
+    });
+
     return () => subscription.unsubscribe();
   }, []);
-  
+
   return { user, loading };
 }
 ```
 
 **Step 3: Create middleware for protected routes**
+
 ```typescript
 // pseudocode - middleware.ts
-import { createServerClient, type CookieOptions } from '@supabase/ssr';
-import { NextResponse, type NextRequest } from 'next/server';
+import { createServerClient, type CookieOptions } from "@supabase/ssr";
+import { NextResponse, type NextRequest } from "next/server";
 
 export async function middleware(request: NextRequest) {
   let response = NextResponse.next({
@@ -508,30 +545,32 @@ export async function middleware(request: NextRequest) {
           response.cookies.set({ name, value, ...options });
         },
         remove(name: string, options: CookieOptions) {
-          request.cookies.set({ name, value: '', ...options });
+          request.cookies.set({ name, value: "", ...options });
           response = NextResponse.next({
             request: {
               headers: request.headers,
             },
           });
-          response.cookies.set({ name, value: '', ...options });
+          response.cookies.set({ name, value: "", ...options });
         },
       },
     }
   );
 
-  const { data: { user } } = await supabase.auth.getUser();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
 
   // Protect dashboard routes
-  if (!user && request.nextUrl.pathname.startsWith('/dashboard')) {
-    return NextResponse.redirect(new URL('/login', request.url));
+  if (!user && request.nextUrl.pathname.startsWith("/dashboard")) {
+    return NextResponse.redirect(new URL("/login", request.url));
   }
 
   return response;
 }
 
 export const config = {
-  matcher: ['/dashboard/:path*'],
+  matcher: ["/dashboard/:path*"],
 };
 ```
 
@@ -540,6 +579,7 @@ export const config = {
 ## Epic 3: Authentication Flow
 
 ### Task 3.1: Create Auth Pages
+
 - Build login page with form
 - Create signup page
 - Add password reset flow (basic)
@@ -548,26 +588,29 @@ export const config = {
 // pseudocode - app/(auth)/login/page.tsx
 export default function LoginPage() {
   const form = useForm<LoginSchema>();
-  
+
   const onSubmit = async (data) => {
     await supabase.auth.signInWithPassword(data);
   };
-  
+
   return <AuthForm onSubmit={onSubmit} />;
 }
 ```
 
 ### Task 3.2: Implement Auth Forms
+
 - Create reusable auth form component
 - Add form validation with Zod
 - Implement error handling
 
 ### Task 3.3: Build Auth Navigation
+
 - Add login/logout buttons
 - Create user menu dropdown
 - Handle auth state changes
 
 ### Task 3.4: Set Up Protected Routes
+
 - Create middleware for dashboard routes
 - Implement redirect logic
 - Handle loading states
@@ -581,6 +624,7 @@ export default function LoginPage() {
 ### Task 4.1: Set Up Reddit API Service Authentication
 
 **Step 1: Create Reddit App for Backend Data Fetching**
+
 1. Go to [https://www.reddit.com/prefs/apps](https://www.reddit.com/prefs/apps)
 2. Click "Create App" or "Create Another App"
 3. Fill in the form:
@@ -594,71 +638,173 @@ export default function LoginPage() {
    - Client ID: (shown under "personal use script")
    - Client Secret: (shown as "secret")
 
-**Step 2: Configure snoowrap client for backend use**
+**Step 2: Configure Axios-based Reddit client for backend use**
+
 ```typescript
 // pseudocode - lib/reddit/client.ts
-import Snoowrap from 'snoowrap';
+import axios, { AxiosInstance } from "axios";
 
 // This client is used by our backend service to fetch Reddit data
 // It does NOT handle user authentication (that's done via Supabase)
-export function createRedditClient() {
-  return new Snoowrap({
-    userAgent: process.env.REDDIT_USER_AGENT!,
-    clientId: process.env.REDDIT_CLIENT_ID!,
-    clientSecret: process.env.REDDIT_CLIENT_SECRET!,
-    username: process.env.REDDIT_USERNAME!,     // Bot account
-    password: process.env.REDDIT_PASSWORD!      // Bot account
-  });
+export class RedditAPIClient {
+  private client: AxiosInstance;
+  private accessToken: string | null = null;
+  private tokenExpiry: number = 0;
+
+  constructor() {
+    this.client = axios.create({
+      baseURL: "https://oauth.reddit.com",
+      headers: {
+        "User-Agent": process.env.REDDIT_USER_AGENT!,
+      },
+      timeout: 10000, // 10 second timeout
+    });
+  }
+
+  private async authenticate(): Promise<void> {
+    const auth = Buffer.from(
+      `${process.env.REDDIT_CLIENT_ID}:${process.env.REDDIT_CLIENT_SECRET}`
+    ).toString("base64");
+
+    const { data } = await axios.post(
+      "https://www.reddit.com/api/v1/access_token",
+      new URLSearchParams({
+        grant_type: "password",
+        username: process.env.REDDIT_USERNAME!, // Bot account
+        password: process.env.REDDIT_PASSWORD!, // Bot account
+      }),
+      {
+        headers: {
+          Authorization: `Basic ${auth}`,
+          "User-Agent": process.env.REDDIT_USER_AGENT!,
+          "Content-Type": "application/x-www-form-urlencoded",
+        },
+      }
+    );
+
+    this.accessToken = data.access_token;
+    this.tokenExpiry = Date.now() + data.expires_in * 1000 - 60000; // 1 min buffer
+    this.client.defaults.headers.common["Authorization"] =
+      `Bearer ${data.access_token}`;
+  }
+
+  private async ensureAuthenticated(): Promise<void> {
+    if (!this.accessToken || Date.now() >= this.tokenExpiry) {
+      await this.authenticate();
+    }
+  }
 }
 ```
 
-**Step 3: Create Reddit service class**
+**Step 3: Add Reddit API methods to the client**
+
+```typescript
+// pseudocode - lib/reddit/client.ts (continued)
+export class RedditAPIClient {
+  // ... previous code ...
+
+  async fetchSubredditPosts(
+    subreddit: string,
+    limit = 25
+  ): Promise<RedditPost[]> {
+    await this.ensureAuthenticated();
+
+    try {
+      const { data } = await this.client.get(`/r/${subreddit}/hot`, {
+        params: { limit },
+      });
+
+      return data.data.children.map((post: any) => ({
+        id: post.data.id,
+        subreddit: post.data.subreddit,
+        title: post.data.title,
+        content: post.data.selftext,
+        url: `https://reddit.com${post.data.permalink}`,
+        score: post.data.score,
+        numComments: post.data.num_comments,
+        created: new Date(post.data.created_utc * 1000),
+      }));
+    } catch (error) {
+      console.error(`Failed to fetch posts from r/${subreddit}:`, error);
+      throw new Error(`Reddit API error: ${error.message}`);
+    }
+  }
+
+  async fetchPostComments(
+    postId: string,
+    limit = 50
+  ): Promise<RedditComment[]> {
+    await this.ensureAuthenticated();
+
+    try {
+      const { data } = await this.client.get(`/comments/${postId}`, {
+        params: { limit, depth: 1 },
+      });
+
+      const comments = data[1]?.data?.children || [];
+
+      return comments
+        .filter((comment: any) => comment.data.score > 5) // High-quality comments
+        .map((comment: any) => ({
+          id: comment.data.id,
+          body: comment.data.body,
+          score: comment.data.score,
+          author: comment.data.author,
+        }));
+    } catch (error) {
+      console.error(`Failed to fetch comments for post ${postId}:`, error);
+      throw new Error(`Reddit API error: ${error.message}`);
+    }
+  }
+
+  async fetchMultipleSubreddits(subreddits: string[]): Promise<RedditPost[]> {
+    const allPosts = await Promise.allSettled(
+      subreddits.map((subreddit) => this.fetchSubredditPosts(subreddit))
+    );
+
+    return allPosts
+      .filter(
+        (result): result is PromiseFulfilledResult<RedditPost[]> =>
+          result.status === "fulfilled"
+      )
+      .flatMap((result) => result.value)
+      .sort((a, b) => b.score - a.score); // Sort by score descending
+  }
+}
+```
+
+**Step 4: Create Reddit service wrapper**
+
 ```typescript
 // pseudocode - services/reddit.ts
-import { createRedditClient } from '@/lib/reddit/client';
-import type { RedditPost } from '@/types/reddit';
+import { RedditAPIClient } from "@/lib/reddit/client";
+import type { RedditPost, RedditComment } from "@/types/reddit";
 
 export class RedditService {
-  private client: Snoowrap;
-  
+  private client: RedditAPIClient;
+
   constructor() {
-    this.client = createRedditClient();
+    this.client = new RedditAPIClient();
   }
-  
+
   async fetchTrendingPosts(subreddit: string): Promise<RedditPost[]> {
-    const posts = await this.client
-      .getSubreddit(subreddit)
-      .getHot({ limit: 25 });
-    
-    return posts.map(post => ({
-      id: post.id,
-      subreddit: post.subreddit.display_name,
-      title: post.title,
-      content: post.selftext,
-      url: `https://reddit.com${post.permalink}`,
-      score: post.score,
-      numComments: post.num_comments,
-      created: new Date(post.created_utc * 1000)
-    }));
+    return this.client.fetchSubredditPosts(subreddit);
   }
-  
-  async fetchPostComments(postId: string, limit = 50): Promise<RedditComment[]> {
-    const submission = await this.client.getSubmission(postId);
-    const comments = await submission.expandReplies({ limit, depth: 1 });
-    
-    return comments.comments
-      .filter(comment => comment.score > 5) // Only high-quality comments
-      .map(comment => ({
-        id: comment.id,
-        body: comment.body,
-        score: comment.score,
-        author: comment.author.name
-      }));
+
+  async fetchPostComments(postId: string): Promise<RedditComment[]> {
+    return this.client.fetchPostComments(postId);
+  }
+
+  async fetchFromMultipleSubreddits(
+    subreddits: string[]
+  ): Promise<RedditPost[]> {
+    return this.client.fetchMultipleSubreddits(subreddits);
   }
 }
 ```
 
-**Step 4: Add Reddit API credentials to .env.local**
+**Step 5: Add Reddit API credentials to .env.local**
+
 ```bash
 # Reddit API credentials (for backend data fetching only)
 # This is NOT for user authentication - users only use Supabase Auth
@@ -670,16 +816,19 @@ REDDIT_PASSWORD=your_reddit_bot_password  # Bot account password
 ```
 
 ### Task 4.2: Build Data Fetching Logic
+
 - Create function to fetch posts from multiple subreddits
 - Extract comments with high engagement
 - Format data for AI processing
 
 ### Task 4.3: Implement Caching Layer
+
 - Cache Reddit data in memory
 - Add 6-hour expiration
 - Create cache invalidation logic
 
 ### Task 4.4: Add Rate Limiting
+
 - Implement simple delay between requests
 - Handle rate limit errors
 - Add retry logic
@@ -689,6 +838,7 @@ REDDIT_PASSWORD=your_reddit_bot_password  # Bot account password
 ## Epic 5: AI Agent Pipeline
 
 ### Task 5.1: Set Up LangGraph Workflow
+
 - Initialize StateGraph
 - Define workflow state interface
 - Configure agent nodes
@@ -704,8 +854,8 @@ const workflow = new StateGraph<WorkflowState>({
     redditPosts: [],
     painPoints: [],
     ideas: [],
-    errors: []
-  }
+    errors: [],
+  },
 });
 ```
 
@@ -715,38 +865,40 @@ const workflow = new StateGraph<WorkflowState>({
 
 ```typescript
 // pseudocode - agents/supervisor.ts
-import { WorkflowState } from '@/types/workflow';
+import { WorkflowState } from "@/types/workflow";
 
-export async function supervisorAgent(state: WorkflowState): Promise<WorkflowState> {
+export async function supervisorAgent(
+  state: WorkflowState
+): Promise<WorkflowState> {
   console.log(`[Supervisor] Starting workflow ${state.workflowId}`);
-  
+
   // Initialize state if this is the first run
   if (!state.workflowId) {
     state = {
       ...state,
       workflowId: generateWorkflowId(),
-      currentStep: 'fetching',
-      errors: []
+      currentStep: "fetching",
+      errors: [],
     };
   }
-  
+
   // Validate we have Reddit data to process
   if (!state.redditPosts || state.redditPosts.length === 0) {
-    console.error('[Supervisor] No Reddit posts to process');
+    console.error("[Supervisor] No Reddit posts to process");
     return {
       ...state,
-      currentStep: 'complete',
-      errors: [...state.errors, 'No Reddit data available']
+      currentStep: "complete",
+      errors: [...state.errors, "No Reddit data available"],
     };
   }
-  
+
   console.log(`[Supervisor] Processing ${state.redditPosts.length} posts`);
   console.log(`[Supervisor] Moving to step: ${state.currentStep}`);
-  
+
   // The workflow will automatically proceed to the next agent
   return {
     ...state,
-    currentStep: 'extracting'
+    currentStep: "extracting",
   };
 }
 
@@ -757,6 +909,7 @@ function generateWorkflowId(): string {
 ```
 
 **Key responsibilities:**
+
 - Initialize workflow with unique ID
 - Validate input data exists
 - Set initial workflow state
@@ -765,6 +918,7 @@ function generateWorkflowId(): string {
 - Prepare state for next agent
 
 ### Task 5.3: Build Pain Extractor Agent
+
 - Create GPT-5-mini prompt for pain extraction
 - Parse Reddit content
 - Extract and categorize pain points
@@ -780,13 +934,13 @@ async function painExtractorAgent(state: WorkflowState) {
     
     Return JSON array with severity levels.
   `;
-  
+
   const response = await openai.chat.completions.create({
     model: "gpt-5-mini",
     messages: [{ role: "user", content: prompt }],
-    response_format: { type: "json_object" }
+    response_format: { type: "json_object" },
   });
-  
+
   return { ...state, painPoints: response.data };
 }
 ```
@@ -797,26 +951,28 @@ async function painExtractorAgent(state: WorkflowState) {
 
 ```typescript
 // pseudocode - agents/ideaGenerator.ts
-import { WorkflowState, PainPoint, ProductIdea } from '@/types/workflow';
-import { openai } from '@/lib/openai';
+import { WorkflowState, PainPoint, ProductIdea } from "@/types/workflow";
+import { openai } from "@/lib/openai";
 
-export async function ideaGeneratorAgent(state: WorkflowState): Promise<WorkflowState> {
+export async function ideaGeneratorAgent(
+  state: WorkflowState
+): Promise<WorkflowState> {
   const { painPoints } = state;
-  
+
   if (!painPoints || painPoints.length === 0) {
     return {
       ...state,
-      currentStep: 'complete',
-      errors: [...state.errors, 'No pain points to process']
+      currentStep: "complete",
+      errors: [...state.errors, "No pain points to process"],
     };
   }
-  
+
   const prompt = `
     You are a startup idea generator. Based on these user pain points from Reddit, 
     generate innovative product ideas.
     
     Pain Points:
-    ${painPoints.map(p => `- ${p.description} (severity: ${p.severity})`).join('\n')}
+    ${painPoints.map((p) => `- ${p.description} (severity: ${p.severity})`).join("\n")}
     
     For each pain point, generate a product idea with:
     1. A catchy product name
@@ -834,33 +990,33 @@ export async function ideaGeneratorAgent(state: WorkflowState): Promise<Workflow
     
     Generate 2-3 ideas per pain point. Be creative but realistic.
   `;
-  
+
   const response = await openai.chat.completions.create({
-    model: 'gpt-5-mini',
-    messages: [{ role: 'user', content: prompt }],
-    response_format: { type: 'json_object' },
-    temperature: 0.8 // Higher temperature for more creativity
+    model: "gpt-5-mini",
+    messages: [{ role: "user", content: prompt }],
+    response_format: { type: "json_object" },
+    temperature: 0.8, // Higher temperature for more creativity
   });
-  
-  const ideas = JSON.parse(response.choices[0].message.content || '[]');
-  
+
+  const ideas = JSON.parse(response.choices[0].message.content || "[]");
+
   // Add sources from pain points
   const enrichedIdeas: ProductIdea[] = ideas.map((idea: any) => {
-    const relatedPainPoint = painPoints.find(p => 
+    const relatedPainPoint = painPoints.find((p) =>
       idea.painPoint.includes(p.description.substring(0, 50))
     );
-    
+
     return {
       ...idea,
       sources: relatedPainPoint?.examples || [],
-      score: 0 // Will be set by scoring agent
+      score: 0, // Will be set by scoring agent
     };
   });
-  
+
   return {
     ...state,
     ideas: enrichedIdeas,
-    currentStep: 'scoring'
+    currentStep: "scoring",
   };
 }
 ```
@@ -871,20 +1027,22 @@ export async function ideaGeneratorAgent(state: WorkflowState): Promise<Workflow
 
 ```typescript
 // pseudocode - agents/scorer.ts
-import { WorkflowState, ProductIdea } from '@/types/workflow';
-import { openai } from '@/lib/openai';
+import { WorkflowState, ProductIdea } from "@/types/workflow";
+import { openai } from "@/lib/openai";
 
-export async function scoringAgent(state: WorkflowState): Promise<WorkflowState> {
+export async function scoringAgent(
+  state: WorkflowState
+): Promise<WorkflowState> {
   const { ideas } = state;
-  
+
   if (!ideas || ideas.length === 0) {
     return {
       ...state,
-      currentStep: 'complete',
-      errors: [...state.errors, 'No ideas to score']
+      currentStep: "complete",
+      errors: [...state.errors, "No ideas to score"],
     };
   }
-  
+
   // Score each idea individually
   const scoredIdeas = await Promise.all(
     ideas.map(async (idea) => {
@@ -915,34 +1073,36 @@ export async function scoringAgent(state: WorkflowState): Promise<WorkflowState>
           "reasoning": "Brief explanation of the score"
         }
       `;
-      
+
       const response = await openai.chat.completions.create({
-        model: 'gpt-5-mini',
-        messages: [{ role: 'user', content: prompt }],
-        response_format: { type: 'json_object' },
-        temperature: 0.3 // Lower temperature for consistent scoring
+        model: "gpt-5-mini",
+        messages: [{ role: "user", content: prompt }],
+        response_format: { type: "json_object" },
+        temperature: 0.3, // Lower temperature for consistent scoring
       });
-      
-      const scores = JSON.parse(response.choices[0].message.content || '{}');
-      
+
+      const scores = JSON.parse(response.choices[0].message.content || "{}");
+
       return {
         ...idea,
         score: scores.total || 0,
-        scoreDetails: scores
+        scoreDetails: scores,
       };
     })
   );
-  
+
   // Sort by score (highest first)
   scoredIdeas.sort((a, b) => b.score - a.score);
-  
+
   console.log(`[Scorer] Scored ${scoredIdeas.length} ideas`);
-  console.log(`[Scorer] Top idea: ${scoredIdeas[0].name} (score: ${scoredIdeas[0].score})`);
-  
+  console.log(
+    `[Scorer] Top idea: ${scoredIdeas[0].name} (score: ${scoredIdeas[0].score})`
+  );
+
   return {
     ...state,
     ideas: scoredIdeas,
-    currentStep: 'complete'
+    currentStep: "complete",
   };
 }
 ```
@@ -953,12 +1113,12 @@ export async function scoringAgent(state: WorkflowState): Promise<WorkflowState>
 
 ```typescript
 // pseudocode - agents/workflow.ts
-import { StateGraph, END } from '@langchain/langgraph';
-import { WorkflowState } from '@/types/workflow';
-import { supervisorAgent } from './supervisor';
-import { painExtractorAgent } from './painExtractor';
-import { ideaGeneratorAgent } from './ideaGenerator';
-import { scoringAgent } from './scorer';
+import { StateGraph, END } from "@langchain/langgraph";
+import { WorkflowState } from "@/types/workflow";
+import { supervisorAgent } from "./supervisor";
+import { painExtractorAgent } from "./painExtractor";
+import { ideaGeneratorAgent } from "./ideaGenerator";
+import { scoringAgent } from "./scorer";
 
 export function createWorkflow() {
   // Initialize the workflow
@@ -969,23 +1129,23 @@ export function createWorkflow() {
       redditPosts: [],
       painPoints: [],
       ideas: [],
-      errors: []
-    }
+      errors: [],
+    },
   });
-  
+
   // Add all agent nodes
-  workflow.addNode('supervisor', supervisorAgent);
-  workflow.addNode('pain_extractor', painExtractorAgent);
-  workflow.addNode('idea_generator', ideaGeneratorAgent);
-  workflow.addNode('scorer', scoringAgent);
-  
+  workflow.addNode("supervisor", supervisorAgent);
+  workflow.addNode("pain_extractor", painExtractorAgent);
+  workflow.addNode("idea_generator", ideaGeneratorAgent);
+  workflow.addNode("scorer", scoringAgent);
+
   // Define the flow
-  workflow.setEntryPoint('supervisor');
-  workflow.addEdge('supervisor', 'pain_extractor');
-  workflow.addEdge('pain_extractor', 'idea_generator');
-  workflow.addEdge('idea_generator', 'scorer');
-  workflow.addEdge('scorer', END);
-  
+  workflow.setEntryPoint("supervisor");
+  workflow.addEdge("supervisor", "pain_extractor");
+  workflow.addEdge("pain_extractor", "idea_generator");
+  workflow.addEdge("idea_generator", "scorer");
+  workflow.addEdge("scorer", END);
+
   // Compile the workflow
   return workflow.compile();
 }
@@ -993,60 +1153,61 @@ export function createWorkflow() {
 // Usage example
 export async function runIdeaGeneration(redditPosts: RedditPost[]) {
   const workflow = createWorkflow();
-  
+
   try {
     // Initialize state with Reddit data
     const initialState: WorkflowState = {
-      workflowId: '',
-      currentStep: 'fetching',
+      workflowId: "",
+      currentStep: "fetching",
       redditPosts,
       painPoints: [],
       ideas: [],
-      errors: []
+      errors: [],
     };
-    
+
     // Run the workflow
     const result = await workflow.invoke(initialState);
-    
+
     // Check for errors
     if (result.errors.length > 0) {
-      console.error('Workflow errors:', result.errors);
+      console.error("Workflow errors:", result.errors);
     }
-    
+
     // Return the generated ideas
     return {
       success: result.errors.length === 0,
       ideas: result.ideas,
-      errors: result.errors
+      errors: result.errors,
     };
   } catch (error) {
-    console.error('Workflow failed:', error);
+    console.error("Workflow failed:", error);
     return {
       success: false,
       ideas: [],
-      errors: [error.message]
+      errors: [error.message],
     };
   }
 }
 ```
 
 **Test the workflow:**
+
 ```typescript
 // pseudocode - agents/workflow.test.ts
-import { runIdeaGeneration } from './workflow';
-import { RedditService } from '@/services/reddit';
+import { runIdeaGeneration } from "./workflow";
+import { RedditService } from "@/services/reddit";
 
 async function testWorkflow() {
   // Fetch test data
   const reddit = new RedditService();
-  const posts = await reddit.fetchTrendingPosts('startups');
-  
+  const posts = await reddit.fetchTrendingPosts("startups");
+
   // Run the workflow
   const result = await runIdeaGeneration(posts);
-  
+
   // Log results
-  console.log('Generated ideas:', result.ideas.length);
-  console.log('Top 3 ideas:');
+  console.log("Generated ideas:", result.ideas.length);
+  console.log("Top 3 ideas:");
   result.ideas.slice(0, 3).forEach((idea, i) => {
     console.log(`${i + 1}. ${idea.name} (Score: ${idea.score})`);
     console.log(`   ${idea.pitch}`);
@@ -1059,11 +1220,13 @@ async function testWorkflow() {
 ## Epic 6: Dashboard & Ideas Feed
 
 ### Task 6.1: Create Dashboard Layout
+
 - Build dashboard shell with sidebar
 - Add navigation menu
 - Implement responsive design
 
 ### Task 6.2: Build Ideas Feed Component
+
 - Create idea card component
 - Implement infinite scroll or pagination
 - Add filtering by category
@@ -1072,13 +1235,13 @@ async function testWorkflow() {
 // pseudocode - components/IdeasFeed.tsx
 export function IdeasFeed() {
   const { data: ideas } = useQuery({
-    queryKey: ['ideas'],
-    queryFn: fetchIdeas
+    queryKey: ["ideas"],
+    queryFn: fetchIdeas,
   });
-  
+
   return (
     <div className="grid gap-4">
-      {ideas.map(idea => (
+      {ideas.map((idea) => (
         <IdeaCard key={idea.id} idea={idea} />
       ))}
     </div>
@@ -1087,6 +1250,7 @@ export function IdeasFeed() {
 ```
 
 ### Task 6.3: Add Topic Filtering
+
 - Create filter UI component with categories:
   - DevTools
   - Health
@@ -1100,6 +1264,7 @@ export function IdeasFeed() {
 - Persist filter preferences in localStorage
 
 ### Task 6.4: Implement "New" Badge Logic
+
 - Track viewed ideas
 - Show new badge for recent ideas
 - Update view count on click
@@ -1109,11 +1274,13 @@ export function IdeasFeed() {
 ## Epic 7: Email Subscription System
 
 ### Task 7.1: Create Subscription UI
+
 - Build subscription form
 - Add topic selection checkboxes
 - Create success/error states
 
 ### Task 7.2: Implement Subscription API
+
 - Create subscription endpoint
 - Generate unsubscribe tokens
 - Store preferences in database
@@ -1122,30 +1289,31 @@ export function IdeasFeed() {
 // pseudocode - app/api/subscriptions/route.ts
 export async function POST(request: Request) {
   const { email, topics } = await request.json();
-  
-  const subscription = await supabase
-    .from('subscriptions')
-    .insert({
-      email,
-      topics,
-      unsubscribe_token: generateToken()
-    });
-    
+
+  const subscription = await supabase.from("subscriptions").insert({
+    email,
+    topics,
+    unsubscribe_token: generateToken(),
+  });
+
   return Response.json(subscription);
 }
 ```
 
 ### Task 7.3: Build Email Templates
+
 - Create React Email template
 - Design responsive layout
 - Add unsubscribe link
 
 ### Task 7.4: Set Up Resend Integration
+
 - Configure Resend client
 - Create email sending service
 - Handle delivery errors
 
 ### Task 7.5: Implement Email Dispatch Logic
+
 - Query active subscriptions
 - Filter ideas by user preferences
 - Batch send emails
@@ -1155,11 +1323,13 @@ export async function POST(request: Request) {
 ## Epic 8: Background Jobs
 
 ### Task 8.1: Create Cron Endpoints
+
 - Set up `/api/cron/generate` endpoint
 - Add `/api/cron/email` endpoint
 - Secure with API keys
 
 ### Task 8.2: Implement Generation Job
+
 - Trigger Reddit data fetch
 - Run AI pipeline
 - Store results in database
@@ -1168,31 +1338,33 @@ export async function POST(request: Request) {
 // pseudocode - app/api/cron/generate/route.ts
 export async function POST(request: Request) {
   // Verify cron secret
-  const secret = request.headers.get('x-cron-secret');
+  const secret = request.headers.get("x-cron-secret");
   if (secret !== process.env.CRON_SECRET) {
-    return new Response('Unauthorized', { status: 401 });
+    return new Response("Unauthorized", { status: 401 });
   }
-  
+
   // Run workflow
   const reddit = new RedditService();
   const posts = await reddit.fetchTrendingPosts();
-  
+
   const workflow = createWorkflow();
   const result = await workflow.invoke({ redditPosts: posts });
-  
+
   // Store ideas
   await storeIdeas(result.ideas);
-  
+
   return Response.json({ success: true });
 }
 ```
 
 ### Task 8.3: Implement Email Job
+
 - Query new ideas
 - Get active subscriptions
 - Send digest emails
 
 ### Task 8.4: Add Manual Trigger
+
 - Create admin UI for manual runs
 - Add run status tracking
 - Show last run timestamp
@@ -1202,12 +1374,14 @@ export async function POST(request: Request) {
 ## Epic 9: Landing Page & Marketing
 
 ### Task 9.1: Create Landing Page Layout
+
 - Build responsive header with navigation
 - Implement hero section
 - Add value proposition sections
 - Create CTA buttons
 
 ### Task 9.2: Implement Landing Page Components
+
 - Hero component with gradient background
 - Features grid (3 key benefits)
 - How it works section
@@ -1228,11 +1402,13 @@ export default function LandingPage() {
 ```
 
 ### Task 9.3: Add Marketing Animations
+
 - Implement subtle scroll animations
 - Add hover effects
 - Ensure smooth transitions
 
 ### Task 9.4: Optimize for SEO
+
 - Add metadata
 - Implement Open Graph tags
 - Set up proper page structure
@@ -1242,31 +1418,37 @@ export default function LandingPage() {
 ## Epic 10: Polish & Deployment
 
 ### Task 10.1: Add Loading States
+
 - Implement skeleton screens
 - Add loading spinners
 - Handle empty states
 
 ### Task 10.2: Implement Error Handling
+
 - Create error boundaries
 - Add user-friendly error messages
 - Log errors properly
 
 ### Task 10.3: Optimize Performance
+
 - Add React Query caching
 - Implement lazy loading
 - Optimize bundle size
 
 ### Task 10.4: Prepare for Deployment
+
 - Set up Vercel project
 - Configure environment variables
 - Add domain and SSL
 
 ### Task 10.5: Create Documentation
+
 - Write README.md with local setup instructions
 - Add setup instructions
 - Document API endpoints
 
 ### Task 10.6: Create Cursor Artifacts
+
 - Create `.cursor/rules.md` with AI coding guidelines
 - Create `.cursor/PROMPTS.md` with 5-10 key prompts used
 - Document architectural decisions and constraints
