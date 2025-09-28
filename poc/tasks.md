@@ -8,7 +8,7 @@ This document outlines the step-by-step implementation tasks for the Pain Radar 
 
 ## Epic 1: Project Foundation
 
-### Task 1.1: Initialize Next.js Project
+### Task 1.1: Initialize Next.js Project (DONE)
 
 **Step 1: Create Next.js project with TypeScript and Tailwind**
 
@@ -57,7 +57,7 @@ touch app/\(auth\)/layout.tsx
 touch app/\(dashboard\)/layout.tsx
 ```
 
-### Task 1.2: Install Core Dependencies
+### Task 1.2: Install Core Dependencies (DONE)
 
 **Note**: Install all packages without specifying versions to get the latest stable releases.
 
@@ -110,7 +110,7 @@ npm install date-fns nanoid
 npm install -D @types/node
 ```
 
-### Task 1.3: Environment Configuration
+### Task 1.3: Environment Configuration (PARTIALLY DONE, CREATED .env and .env.example)
 
 - Create `.env.local` file
 - Set up environment variable types
