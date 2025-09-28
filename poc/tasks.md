@@ -578,7 +578,7 @@ export const config = {
 
 ## Epic 3: Authentication Flow
 
-### Task 3.1: Create Auth Pages
+### Task 3.1: Create Auth Pages (DONE)
 
 - Build login page with form
 - Create signup page
