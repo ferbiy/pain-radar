@@ -14,15 +14,27 @@ export function Loading({ className, size = "md", text }: LoadingProps) {
     lg: "h-8 w-8",
   };
 
+  const label = text?.trim() ? text : "Loading...";
+
   return (
     <div
+      role="status"
+      aria-live="polite"
+      aria-busy="true"
       className={cn(
         "flex flex-col items-center justify-center space-y-2",
         className
       )}
     >
-      <Loader2 className={cn("animate-spin text-primary", sizeClasses[size])} />
-      {text && <p className="text-sm text-muted-foreground">{text}</p>}
+      <Loader2
+        className={cn("animate-spin text-primary", sizeClasses[size])}
+        aria-hidden="true"
+      />
+      {text?.trim() ? (
+        <p className="text-sm text-muted-foreground">{text}</p>
+      ) : (
+        <span className="sr-only">{label}</span>
+      )}
     </div>
   );
 }
@@ -36,5 +48,12 @@ export function LoadingPage({ text = "Loading..." }: { text?: string }) {
 }
 
 export function LoadingSpinner({ className }: { className?: string }) {
-  return <Loader2 className={cn("h-4 w-4 animate-spin", className)} />;
+  return (
+    <span role="status" aria-label="Loading">
+      <Loader2
+        className={cn("h-4 w-4 animate-spin", className)}
+        aria-hidden="true"
+      />
+    </span>
+  );
 }
