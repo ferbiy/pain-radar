@@ -1,0 +1,261 @@
+---
+alwaysApply: true
+---
+# AI Agent Development Rules
+
+## Core TypeScript Rules
+
+### Rule 2.1: No `any` or Type Assertions
+- **NEVER use `any` type** if we can specify proper types
+- **AVOID type assertions (`as`)** unless absolutely necessary for external library compatibility
+- **USE generics** to maintain type safety while keeping flexibility
+- **PREFER explicit interfaces** over inline object types
+
+#### ✅ Good Examples:
+```typescript
+// Generic component with proper typing
+interface FormProps<T extends Record<string, unknown>> {
+  schema: z.ZodSchema<T>;
+  onSubmit: (data: T) => Promise<{ error?: string } | void>;
+}
+
+// Proper error handling without assertions
+{String(errors[field.name]?.message || "")}
+
+// Explicit interface
+interface AuthFormField {
+  name: string;
+  label: string;
+  type: string;
+}
+```
+
+#### ❌ Bad Examples:
+```typescript
+// Don't use any
+schema: any;
+onSubmit: (data: any) => void;
+
+// Don't use type assertions
+{errors[field.name]?.message as string}
+
+// Don't use inline objects for complex types
+fields: Array<{name: string; label: string; type: string}>;
+```
+
+### Rule 2.2: React Component Structure Order
+Components must follow this **exact order** from top to bottom:
+
+1. **Consts** - Static values, configurations
+2. **useState** - Component state
+3. **Hooks** - Custom hooks, context hooks
+4. **useMemo** - Memoized values
+5. **useCallback** - Memoized functions
+6. **useEffect** - Side effects
+7. **Conditional Logic** - Early returns, guards
+8. **return** - JSX render
+
+#### ✅ Correct Structure:
+```typescript
+export function MyComponent() {
+  // 1. Consts
+  const API_ENDPOINT = "/api/users";
+  const DEFAULT_OPTIONS = { timeout: 5000 };
+
+  // 2. States
+  const [loading, setLoading] = useState(false);
+  const [data, setData] = useState<User[]>([]);
+  const [error, setError] = useState("");
+
+  // 3. Hooks
+  const { user } = useAuth();
+  const router = useRouter();
+
+  // 4. useMemo
+  const filteredData = useMemo(() => 
+    data.filter(item => item.active), [data]
+  );
+
+  // 5. useCallback
+  const handleSubmit = useCallback(async (formData: FormData) => {
+    setLoading(true);
+    // ... logic
+  }, []);
+
+  // 6. useEffect
+  useEffect(() => {
+    fetchData();
+  }, []);
+
+  // 7. Conditional logic
+  if (loading) return <LoadingSpinner />;
+  if (error) return <ErrorMessage error={error} />;
+
+  // 8. Return
+  return (
+    <div>
+      {/* JSX content */}
+    </div>
+  );
+}
+```
+
+#### ❌ Wrong Structure:
+```typescript
+export function MyComponent() {
+  const [loading, setLoading] = useState(false);
+  
+  useEffect(() => {
+    // Effect before other hooks
+  }, []);
+  
+  const { user } = useAuth(); // Hook after useEffect
+  
+  const [data, setData] = useState([]); // State after hooks
+  
+  const API_ENDPOINT = "/api"; // Const after state
+  
+  // This violates the proper order!
+}
+```
+
+## Enforcement
+- **All components** must follow these rules
+- **Code reviews** should check for compliance
+- **Linting rules** should enforce type safety
+- **No exceptions** without explicit justification
+
+## Benefits
+- **Consistent codebase** - Easy to read and maintain
+- **Type safety** - Catch errors at compile time
+- **Better performance** - Proper hook ordering prevents unnecessary re-renders
+- **Team productivity** - Everyone knows where to find things
+# AI Agent Development Rules
+
+## Core TypeScript Rules
+
+### Rule 2.1: No `any` or Type Assertions
+- **NEVER use `any` type** if we can specify proper types
+- **AVOID type assertions (`as`)** unless absolutely necessary for external library compatibility
+- **USE generics** to maintain type safety while keeping flexibility
+- **PREFER explicit interfaces** over inline object types
+
+#### ✅ Good Examples:
+```typescript
+// Generic component with proper typing
+interface FormProps<T extends Record<string, unknown>> {
+  schema: z.ZodSchema<T>;
+  onSubmit: (data: T) => Promise<{ error?: string } | void>;
+}
+
+// Proper error handling without assertions
+{String(errors[field.name]?.message || "")}
+
+// Explicit interface
+interface AuthFormField {
+  name: string;
+  label: string;
+  type: string;
+}
+```
+
+#### ❌ Bad Examples:
+```typescript
+// Don't use any
+schema: any;
+onSubmit: (data: any) => void;
+
+// Don't use type assertions
+{errors[field.name]?.message as string}
+
+// Don't use inline objects for complex types
+fields: Array<{name: string; label: string; type: string}>;
+```
+
+### Rule 2.2: React Component Structure Order
+Components must follow this **exact order** from top to bottom:
+
+1. **Consts** - Static values, configurations
+2. **useState** - Component state
+3. **Hooks** - Custom hooks, context hooks
+4. **useMemo** - Memoized values
+5. **useCallback** - Memoized functions
+6. **useEffect** - Side effects
+7. **Conditional Logic** - Early returns, guards
+8. **return** - JSX render
+
+#### ✅ Correct Structure:
+```typescript
+export function MyComponent() {
+  // 1. Consts
+  const API_ENDPOINT = "/api/users";
+  const DEFAULT_OPTIONS = { timeout: 5000 };
+
+  // 2. States
+  const [loading, setLoading] = useState(false);
+  const [data, setData] = useState<User[]>([]);
+  const [error, setError] = useState("");
+
+  // 3. Hooks
+  const { user } = useAuth();
+  const router = useRouter();
+
+  // 4. useMemo
+  const filteredData = useMemo(() => 
+    data.filter(item => item.active), [data]
+  );
+
+  // 5. useCallback
+  const handleSubmit = useCallback(async (formData: FormData) => {
+    setLoading(true);
+    // ... logic
+  }, []);
+
+  // 6. useEffect
+  useEffect(() => {
+    fetchData();
+  }, []);
+
+  // 7. Conditional logic
+  if (loading) return <LoadingSpinner />;
+  if (error) return <ErrorMessage error={error} />;
+
+  // 8. Return
+  return (
+    <div>
+      {/* JSX content */}
+    </div>
+  );
+}
+```
+
+#### ❌ Wrong Structure:
+```typescript
+export function MyComponent() {
+  const [loading, setLoading] = useState(false);
+  
+  useEffect(() => {
+    // Effect before other hooks
+  }, []);
+  
+  const { user } = useAuth(); // Hook after useEffect
+  
+  const [data, setData] = useState([]); // State after hooks
+  
+  const API_ENDPOINT = "/api"; // Const after state
+  
+  // This violates the proper order!
+}
+```
+
+## Enforcement
+- **All components** must follow these rules
+- **Code reviews** should check for compliance
+- **Linting rules** should enforce type safety
+- **No exceptions** without explicit justification
+
+## Benefits
+- **Consistent codebase** - Easy to read and maintain
+- **Type safety** - Catch errors at compile time
+- **Better performance** - Proper hook ordering prevents unnecessary re-renders
+- **Team productivity** - Everyone knows where to find things

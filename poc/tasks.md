@@ -597,7 +597,7 @@ export default function LoginPage() {
 }
 ```
 
-### Task 3.2: Implement Auth Forms
+### Task 3.2: Implement Auth Forms (DONE)
 
 - Create reusable auth form component
 - Add form validation with Zod
