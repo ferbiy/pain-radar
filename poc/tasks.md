@@ -339,7 +339,7 @@ After creating tables, insert initial subreddits:
 - r/smallbusiness
 - r/webdev
 
-### Task 2.3: Generate TypeScript Types from Supabase
+### Task 2.3: Generate TypeScript Types from Supabase (DONE)
 
 **Install Supabase CLI and generate types:**
 
