@@ -437,7 +437,7 @@ export const supabaseAdmin = createClient<Database>(
 );
 ```
 
-### Task 2.5: Implement Auth Utilities
+### Task 2.5: Implement Auth Utilities (DONE)
 
 **Step 1: Create auth actions for server components**
 
