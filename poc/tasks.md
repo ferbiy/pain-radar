@@ -370,7 +370,7 @@ supabase gen types typescript --linked > types/supabase.ts
 - Enum types
 - Composite types
 
-### Task 2.4: Set Up Supabase Client
+### Task 2.4: Set Up Supabase Client (DONE)
 
 **Step 1: Create browser client for client-side usage**
 
