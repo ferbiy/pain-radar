@@ -79,16 +79,31 @@ async function painExtractorNode(
     // Prepare Reddit posts context for the agent
     const postsContext = state.redditPosts
       .slice(0, 10) // Limit for token constraints
-      .map(
-        (post, idx) =>
-          `Post ${idx + 1}:
+      .map((post, idx) => {
+        let context = `Post ${idx + 1}:
 Subreddit: r/${post.subreddit}
 Title: ${post.title}
 Content: ${post.content?.substring(0, 400) || "[No content]"}${post.content && post.content.length > 400 ? "..." : ""}
 Engagement: ${post.score} upvotes, ${post.numComments} comments
-URL: ${post.url}
----`
-      )
+URL: ${post.url}`;
+
+        // Include top comments if available (for high-engagement posts with low content)
+        if (post.comments && post.comments.length > 0) {
+          const topComments = post.comments
+            .slice(0, 5) // Top 5 comments
+            .map(
+              (comment, commentIdx) =>
+                `  Comment ${commentIdx + 1} (${comment.score} upvotes): ${comment.body.substring(0, 200)}${comment.body.length > 200 ? "..." : ""}`
+            )
+            .join("\n");
+
+          context += `\nTop Comments:\n${topComments}`;
+        }
+
+        context += "\n---";
+
+        return context;
+      })
       .join("\n\n");
 
     console.log(
@@ -123,12 +138,13 @@ ${state.redditPosts.map((_, idx) => `☐ Post ${idx + 1}: Call analyze_pain_seve
 
 For each post, call analyze_pain_severity with:
 - painDescription: The UNDERLYING PROBLEM people face (not just the post title)
-- examples: Array of direct quotes showing this pain
+- examples: Array of direct quotes showing this pain (use comments if available!)
 - context: The upvotes/comments data from the post
 
 IMPORTANT:
 - painDescription should be a clear problem statement, not just repeating the post title
 - Include specific details from the post content (e.g., "8-person SaaS startup", "3 months", etc.)
+- For examples/quotes: Extract from post content OR top comments (whichever has better pain evidence)
 - Only analyze posts that have real problems (skip announcement threads)
 
 Example:

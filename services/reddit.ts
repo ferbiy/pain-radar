@@ -82,17 +82,71 @@ export class RedditService {
         sort
       );
 
-      // Filter out posts with minimal content
-      const filteredPosts = posts.filter(
-        (post) =>
+      // Filter out META threads and posts with minimal content
+      const filteredPosts = posts.filter((post) => {
+        // Filter out recurring META threads (they have pain in comments, not post content)
+        const metaKeywords = [
+          "weekly",
+          "quarterly",
+          "monthly",
+          "recurring",
+          "share your startup",
+          "hiring thread",
+          "seeking jobs",
+          "co-founder",
+          "find co-founders",
+        ];
+
+        const titleLower = post.title.toLowerCase();
+        const isMetaThread = metaKeywords.some((keyword) =>
+          titleLower.includes(keyword)
+        );
+
+        if (isMetaThread) {
+          console.log(`[Reddit Service] Skipping META thread: "${post.title}"`);
+          return false;
+        }
+
+        // Keep posts with meaningful content
+        return (
           post.title.length > 10 && // Meaningful titles
           (post.content.length > 50 || post.numComments > 5) // Either has content or engagement
+        );
+      });
+
+      // Enrich posts with comments for high-engagement but low-content posts
+      const enrichedPosts = await Promise.all(
+        filteredPosts.map(async (post) => {
+          // Fetch comments if post has high engagement but low content
+          // This catches ambiguous cases where pain might be in comments
+          const hasLowContent = post.content.length < 200;
+          const hasHighEngagement = post.numComments >= 10;
+
+          if (hasLowContent && hasHighEngagement) {
+            console.log(
+              `[Reddit Service] Fetching comments for high-engagement post: "${post.title}" (${post.numComments} comments)`
+            );
+
+            try {
+              const comments = await this.fetchPostComments(post.id, 10); // Top 10 comments
+              return { ...post, comments };
+            } catch (error) {
+              console.warn(
+                `[Reddit Service] Failed to fetch comments for post ${post.id}:`,
+                error
+              );
+              return post; // Return post without comments on error
+            }
+          }
+
+          return post;
+        })
       );
 
-      // Cache the results
-      this.setCachedData(cacheKey, filteredPosts);
+      // Cache the enriched results
+      this.setCachedData(cacheKey, enrichedPosts);
 
-      return filteredPosts;
+      return enrichedPosts;
     } catch (error) {
       console.error(
         `[Reddit Service] Failed to fetch posts from r/${subreddit}:`,

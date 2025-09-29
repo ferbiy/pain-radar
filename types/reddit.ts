@@ -7,6 +7,7 @@ export interface RedditPost {
   score: number;
   numComments: number;
   created: Date;
+  comments?: RedditComment[]; // Top comments for context (optional)
 }
 
 export interface RedditComment {

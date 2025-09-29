@@ -10,7 +10,7 @@ import { RedditService } from "@/services/reddit";
 export async function GET(): Promise<NextResponse> {
   try {
     const subreddit = "startups";
-    const limit = 5;
+    const limit = 2;
 
     console.log(
       `[Test Workflow] Fetching real data from r/${subreddit} (${limit} posts)`
@@ -92,7 +92,7 @@ export async function GET(): Promise<NextResponse> {
 export async function POST(request: NextRequest): Promise<NextResponse> {
   try {
     const body = await request.json();
-    const { subreddit = "startups", limit = 5 } = body;
+    const { subreddit = "startups", limit = 2 } = body; // Default to 1 post for faster testing
 
     console.log(
       `[Test Workflow] Starting workflow test with real Reddit data from r/${subreddit}`
