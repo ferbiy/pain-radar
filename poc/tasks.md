@@ -837,7 +837,7 @@ REDDIT_PASSWORD=your_reddit_bot_password  # Bot account password
 
 ## Epic 5: AI Agent Pipeline
 
-### Task 5.1: Set Up LangGraph Workflow
+### Task 5.1: Set Up LangGraph Workflow (DONE)
 
 - Initialize StateGraph
 - Define workflow state interface
@@ -859,7 +859,7 @@ const workflow = new StateGraph<WorkflowState>({
 });
 ```
 
-### Task 5.2: Implement Supervisor Agent
+### Task 5.2: Implement Supervisor Agent (DONE)
 
 **Create the main orchestrator that manages the workflow:**
 
@@ -1107,7 +1107,7 @@ export async function scoringAgent(
 }
 ```
 
-### Task 5.6: Connect Workflow Pipeline
+### Task 5.6: Connect Workflow Pipeline (NEEDS CONFIRMATION)
 
 **Wire up the complete LangGraph workflow:**
 
