@@ -1,3 +1,13 @@
+export interface ScoreBreakdown {
+  painSeverity: number;
+  marketSize: number;
+  competition: number;
+  feasibility: number;
+  engagement: number;
+  total: number;
+  reasoning?: string;
+}
+
 export interface ProductIdea {
   id: string;
   name: string;
@@ -5,10 +15,13 @@ export interface ProductIdea {
   painPoint: string;
   targetAudience: string;
   score: number;
-  sources: string[];
+  sources?: string[];
   category: string;
-  createdAt: Date;
-  isNew: boolean;
+  createdAt?: Date | string; // Can be Date object or ISO string
+  generatedAt?: Date | string; // Alias for createdAt from AI workflow
+  isNew?: boolean;
+  scoreBreakdown?: ScoreBreakdown;
+  confidence?: number; // 0.0 - 1.0
 }
 
 export interface Subscription {
