@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { IdeaCard } from "./idea-card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -27,6 +27,24 @@ export function IdeasFeed({ ideas, isLoading = false }: IdeasFeedProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("All");
   const [sortBy, setSortBy] = useState<"score" | "date">("score");
+
+  // Restore filter preferences from localStorage on mount
+  useEffect(() => {
+    const savedCategory = localStorage.getItem("ideas-filter-category");
+    const savedSort = localStorage.getItem("ideas-filter-sort");
+
+    if (savedCategory) setSelectedCategory(savedCategory);
+    if (savedSort) setSortBy(savedSort as "score" | "date");
+  }, []);
+
+  // Persist filter preferences to localStorage
+  useEffect(() => {
+    localStorage.setItem("ideas-filter-category", selectedCategory);
+  }, [selectedCategory]);
+
+  useEffect(() => {
+    localStorage.setItem("ideas-filter-sort", sortBy);
+  }, [sortBy]);
 
   // Filter ideas based on search and category (memoized for performance)
   const filteredIdeas = useMemo(() => {
