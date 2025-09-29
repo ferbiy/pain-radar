@@ -995,7 +995,6 @@ export async function ideaGeneratorAgent(
     model: "gpt-5-mini",
     messages: [{ role: "user", content: prompt }],
     response_format: { type: "json_object" },
-    temperature: 0.8, // Higher temperature for more creativity
   });
 
   const ideas = JSON.parse(response.choices[0].message.content || "[]");
@@ -1078,7 +1077,6 @@ export async function scoringAgent(
         model: "gpt-5-mini",
         messages: [{ role: "user", content: prompt }],
         response_format: { type: "json_object" },
-        temperature: 0.3, // Lower temperature for consistent scoring
       });
 
       const scores = JSON.parse(response.choices[0].message.content || "{}");

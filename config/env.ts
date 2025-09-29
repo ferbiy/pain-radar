@@ -37,7 +37,7 @@ export const env = {
   // OpenAI Configuration
   openai: {
     apiKey: validateEnvVar("OPENAI_API_KEY", process.env.OPENAI_API_KEY),
-    model: optionalEnvVar("OPENAI_MODEL", "gpt-4o-mini"), // Default to GPT-4o-mini
+    model: optionalEnvVar("OPENAI_MODEL", "gpt-5-mini"), // Default to GPT-4o-mini
   },
 
   // Reddit API Configuration (for backend data fetching only)

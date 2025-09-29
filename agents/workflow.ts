@@ -11,6 +11,11 @@ import {
 } from "@/types/workflow";
 import { RedditPost } from "@/types/reddit";
 import { nanoid } from "nanoid";
+import {
+  createChatCompletion,
+  parseJsonResponse,
+  AGENT_CONFIGS,
+} from "@/lib/openai/client";
 
 /**
  * Create workflow data message - stores our workflow state in message content
@@ -67,6 +72,144 @@ export function extractWorkflowData(
 }
 
 /**
+ * Extract pain points from Reddit posts using OpenAI
+ */
+async function extractPainPointsFromPosts(
+  redditPosts: RedditPost[]
+): Promise<PainPoint[]> {
+  console.log(`[Pain Extractor] Analyzing ${redditPosts.length} Reddit posts`);
+
+  // Prepare posts data for analysis
+  const postsForAnalysis = redditPosts.map((post, index) => ({
+    index: index + 1,
+    subreddit: post.subreddit,
+    title: post.title,
+    content: post.content || "[No content]",
+    score: post.score,
+    comments: post.numComments,
+    url: post.url,
+  }));
+
+  const prompt = `Analyze these Reddit posts to extract pain points that could become product opportunities.
+
+POSTS:
+${postsForAnalysis
+  .map(
+    (post) => `
+${post.index}. r/${post.subreddit} (${post.score} upvotes)
+Title: ${post.title}
+Content: ${post.content.substring(0, 400)}${post.content.length > 400 ? "..." : ""}
+`
+  )
+  .join("\n")}
+
+Extract pain points focusing on:
+- Explicit complaints and frustrations
+- Time-consuming processes
+- Expensive solutions
+- Tool/service gaps
+
+Return JSON only:
+{
+  "painPoints": [
+    {
+      "description": "Clear problem description",
+      "severity": "low|medium|high",
+      "category": "hiring|marketing|technical|productivity|financial",
+      "examples": ["quote from post"],
+      "confidence": 0.8,
+      "frequency": 1,
+      "sources": ["${postsForAnalysis[0]?.url || ""}"]
+    }
+  ]
+}
+
+Requirements:
+- Maximum 5 pain points
+- Minimum confidence 0.6
+- Real problems only (not preferences)`;
+
+  try {
+    // Try up to 2 times if we get empty responses
+    let response;
+    let attempts = 0;
+    const maxAttempts = 2;
+
+    do {
+      attempts++;
+      console.log(`[Pain Extractor] Attempt ${attempts}/${maxAttempts}`);
+
+      try {
+        response = await createChatCompletion(
+          [{ role: "user", content: prompt }],
+          AGENT_CONFIGS.painExtractor
+        );
+        break; // Success, exit retry loop
+      } catch (error) {
+        const isEmptyContentError =
+          error instanceof Error &&
+          error.message.includes("OpenAI API returned empty content");
+
+        if (isEmptyContentError && attempts < maxAttempts) {
+          console.warn(
+            `[Pain Extractor] Empty response on attempt ${attempts}, retrying...`
+          );
+          await new Promise((resolve) => setTimeout(resolve, 1000)); // Wait 1 second
+        } else {
+          // Either not an empty content error, or we've exhausted retries
+          throw error;
+        }
+      }
+    } while (attempts < maxAttempts);
+
+    const parsedResponse = parseJsonResponse(response?.content || "", {
+      painPoints: [],
+    });
+
+    if (
+      !parsedResponse.painPoints ||
+      !Array.isArray(parsedResponse.painPoints)
+    ) {
+      console.warn(
+        "[Pain Extractor] Invalid response format, using empty array"
+      );
+
+      return [];
+    }
+
+    // Convert to our PainPoint format and add IDs
+    const painPoints: PainPoint[] = parsedResponse.painPoints.map(
+      (point: PainPoint) => ({
+        id: nanoid(),
+        description: point.description || "Unknown pain point",
+        severity: point.severity ?? "medium",
+        category: point.category || "general",
+        source: point.source || redditPosts[0]?.url || "",
+        examples: Array.isArray(point.examples) ? point.examples : [],
+        confidence: typeof point.confidence ? point.confidence : 0.7,
+        frequency: typeof point.frequency ? point.frequency : 1,
+      })
+    );
+
+    // Filter by confidence threshold
+    const filteredPainPoints = painPoints.filter(
+      (point) => point.confidence >= 0.6
+    );
+
+    console.log(
+      `[Pain Extractor] Extracted ${filteredPainPoints.length} pain points (${painPoints.length - filteredPainPoints.length} filtered out by confidence)`
+    );
+
+    return filteredPainPoints;
+  } catch (error) {
+    console.error("[Pain Extractor] OpenAI API error:", error);
+    throw new Error(
+      `Failed to extract pain points: ${error instanceof Error ? error.message : "Unknown error"}`
+    );
+  }
+}
+
+/**
  * Supervisor node - initializes and validates the workflow
  */
 async function supervisorNode(
@@ -97,7 +240,7 @@ async function supervisorNode(
 }
 
 /**
- * Pain extractor node - extracts pain points from Reddit data
+ * Pain extractor node - extracts pain points from Reddit data using OpenAI
  */
 async function painExtractorNode(
   state: typeof MessagesAnnotation.State
@@ -110,33 +253,57 @@ async function painExtractorNode(
     throw new Error("No workflow data found");
   }
 
-  // For now, create mock pain points (we'll implement real extraction in Task 5.3)
-  const mockPainPoints: PainPoint[] = [
-    {
-      id: nanoid(),
-      description: "Difficulty finding qualified developers",
-      severity: "high",
-      category: "hiring",
-      source: workflowData.redditPosts?.[0]?.url || "",
-      examples: ["can't find anyone good", "market is so competitive"],
-      confidence: 0.8,
-      frequency: 1,
-    },
-  ];
+  if (!workflowData.redditPosts || workflowData.redditPosts.length === 0) {
+    console.warn("[Pain Extractor] No Reddit posts to analyze");
+    const updatedData = createWorkflowDataMessage({
+      ...workflowData,
+      currentStep: "generating",
+      painPoints: [],
+      errors: [...(workflowData.errors || []), "No Reddit posts to analyze"],
+    });
 
-  const updatedData = createWorkflowDataMessage({
-    ...workflowData,
-    currentStep: "generating",
-    painPoints: mockPainPoints,
-  });
+    return {
+      messages: [updatedData],
+    };
+  }
 
-  console.log(
-    `[Pain Extractor] Extracted ${mockPainPoints.length} pain points`
-  );
+  try {
+    // Extract pain points using OpenAI
+    const painPoints = await extractPainPointsFromPosts(
+      workflowData.redditPosts
+    );
 
-  return {
-    messages: [updatedData],
-  };
+    const updatedData = createWorkflowDataMessage({
+      ...workflowData,
+      currentStep: "generating",
+      painPoints,
+    });
+
+    console.log(
+      `[Pain Extractor] Successfully extracted ${painPoints.length} pain points`
+    );
+
+    return {
+      messages: [updatedData],
+    };
+  } catch (error) {
+    console.error("[Pain Extractor] Error extracting pain points:", error);
+
+    const errorMessage =
+      error instanceof Error
+        ? error.message
+        : "Unknown error during pain extraction";
+    const updatedData = createWorkflowDataMessage({
+      ...workflowData,
+      currentStep: "generating",
+      painPoints: [],
+      errors: [...(workflowData.errors || []), errorMessage],
+    });
+
+    return {
+      messages: [updatedData],
+    };
+  }
 }
 
 /**

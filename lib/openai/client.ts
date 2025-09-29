@@ -14,7 +14,6 @@ export const openai = new OpenAI({
  */
 export const DEFAULT_AGENT_CONFIG = {
   model: env.openai.model, // "gpt-4o-mini" from env
-  temperature: 0.7,
   maxTokens: 2000,
   timeout: 30000, // 30 seconds
 } as const;
@@ -25,17 +24,14 @@ export const DEFAULT_AGENT_CONFIG = {
 export const AGENT_CONFIGS = {
   painExtractor: {
     ...DEFAULT_AGENT_CONFIG,
-    temperature: 0.3, // Lower temperature for more consistent extraction
     maxTokens: 1500,
   },
   ideaGenerator: {
     ...DEFAULT_AGENT_CONFIG,
-    temperature: 0.8, // Higher temperature for more creativity
     maxTokens: 2000,
   },
   scorer: {
     ...DEFAULT_AGENT_CONFIG,
-    temperature: 0.2, // Very low temperature for consistent scoring
     maxTokens: 1000,
   },
 } as const;
@@ -45,7 +41,11 @@ export const AGENT_CONFIGS = {
  */
 export async function createChatCompletion(
   messages: OpenAI.Chat.Completions.ChatCompletionMessageParam[],
-  config: typeof DEFAULT_AGENT_CONFIG = DEFAULT_AGENT_CONFIG
+  config: {
+    model: string;
+    maxTokens: number;
+    timeout: number;
+  } = DEFAULT_AGENT_CONFIG
 ): Promise<{
   content: string;
   tokensUsed: number;
@@ -57,14 +57,19 @@ export async function createChatCompletion(
     const completion = await openai.chat.completions.create({
       model: config.model,
       messages,
-      temperature: config.temperature,
-      max_tokens: config.maxTokens,
+      max_completion_tokens: config.maxTokens,
       response_format: { type: "json_object" },
     });
 
     const content = completion.choices[0]?.message?.content || "";
     const tokensUsed = completion.usage?.total_tokens || 0;
     const processingTimeMs = Date.now() - startTime;
+
+    // Check for empty response which indicates an issue
+    if (!content.trim()) {
+      console.warn("[OpenAI] Received empty response from API");
+      throw new Error("OpenAI API returned empty content");
+    }
 
     return {
       content,

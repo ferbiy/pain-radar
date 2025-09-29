@@ -140,7 +140,6 @@ export interface AgentMessage {
  */
 export interface AgentConfig {
   model: string; // e.g., "gpt-4o-mini"
-  temperature: number;
   maxTokens?: number;
   timeout?: number; // milliseconds
 }
