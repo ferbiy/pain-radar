@@ -73,7 +73,12 @@ export class RedditAPIClient {
         }
       );
 
-      console.debug("[Reddit API] Auth response data:", data);
+      console.debug("[Reddit API] Auth response received:", {
+        token_type: data.token_type,
+        expires_in: data.expires_in,
+        scope: data.scope,
+        // access_token: "[REDACTED]" - never log tokens
+      });
 
       this.accessToken = data.access_token;
       this.tokenExpiry = Date.now() + data.expires_in * 1000 - 60000; // 1 min buffer

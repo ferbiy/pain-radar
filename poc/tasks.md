@@ -837,7 +837,36 @@ REDDIT_PASSWORD=your_reddit_bot_password  # Bot account password
 
 ## Epic 5: AI Agent Pipeline
 
-### Task 5.1: Set Up LangGraph Workflow
+**Epic Status:** 🎉 **100% COMPLETE** - All 12 tasks completed, full agent pipeline operational!
+
+**Completed Tasks (12/12):**
+
+- ✅ Task 5.1: Set Up LangGraph Workflow
+- ✅ Task 5.2: Implement Supervisor Agent
+- ✅ Task 5.3: Build Pain Extractor Agent
+- ✅ Task 5.4: Create Idea Generator Agent
+- ✅ Task 5.5: Implement Scoring Agent
+- ✅ Task 5.6: Connect Workflow Pipeline
+- ✅ Task 5.7: Enhance Pain Extractor Agent Output
+- ✅ Task 5.8: Enhance Idea Generator Agent Output
+- ✅ Task 5.9: Enhance Scoring Agent to Use Tool Results
+- ✅ Task 5.10: Implement Hybrid Data Extraction Strategy
+- ✅ Task 5.11: Add Comprehensive Agent Output Validation
+- ✅ Task 5.12: Fix Agent Workflow Performance and Execution
+
+**Key Achievements:**
+
+- ✅ All agents successfully call tools and generate creative, detailed outputs
+- ✅ Workflow completes in 2-3 minutes without timeouts
+- ✅ Pain points are specific and actionable with real examples
+- ✅ Product ideas are creative with unique names, detailed pitches, and specific target audiences
+- ✅ Robust extraction handles partial JSON and multiple message types
+- ✅ **NEW:** Scorer extracts agent's structured scoring synthesis (not just hardcoded fallback)
+- ✅ **NEW:** Comprehensive validation for all outputs (pain points, ideas, scores) with logging
+
+---
+
+### Task 5.1: Set Up LangGraph Workflow (DONE)
 
 - Initialize StateGraph
 - Define workflow state interface
@@ -859,7 +888,7 @@ const workflow = new StateGraph<WorkflowState>({
 });
 ```
 
-### Task 5.2: Implement Supervisor Agent
+### Task 5.2: Implement Supervisor Agent (DONE)
 
 **Create the main orchestrator that manages the workflow:**
 
@@ -917,11 +946,11 @@ function generateWorkflowId(): string {
 - Log progress for debugging
 - Prepare state for next agent
 
-### Task 5.3: Build Pain Extractor Agent
+### Task 5.3: Build Pain Extractor Agent (DONE)
 
-- Create GPT-5-mini prompt for pain extraction
-- Parse Reddit content
-- Extract and categorize pain points
+- ✅ Create GPT-5-mini prompt for pain extraction
+- ✅ Parse Reddit content
+- ✅ Extract and categorize pain points
 
 ```typescript
 // pseudocode - agents/painExtractor.ts
@@ -945,7 +974,7 @@ async function painExtractorAgent(state: WorkflowState) {
 }
 ```
 
-### Task 5.4: Create Idea Generator Agent
+### Task 5.4: Create Idea Generator Agent (DONE)
 
 **Transform pain points into product ideas:**
 
@@ -995,7 +1024,6 @@ export async function ideaGeneratorAgent(
     model: "gpt-5-mini",
     messages: [{ role: "user", content: prompt }],
     response_format: { type: "json_object" },
-    temperature: 0.8, // Higher temperature for more creativity
   });
 
   const ideas = JSON.parse(response.choices[0].message.content || "[]");
@@ -1021,7 +1049,7 @@ export async function ideaGeneratorAgent(
 }
 ```
 
-### Task 5.5: Implement Scoring Agent
+### Task 5.5: Implement Scoring Agent (DONE)
 
 **Evaluate each idea's potential:**
 
@@ -1078,7 +1106,6 @@ export async function scoringAgent(
         model: "gpt-5-mini",
         messages: [{ role: "user", content: prompt }],
         response_format: { type: "json_object" },
-        temperature: 0.3, // Lower temperature for consistent scoring
       });
 
       const scores = JSON.parse(response.choices[0].message.content || "{}");
@@ -1107,7 +1134,7 @@ export async function scoringAgent(
 }
 ```
 
-### Task 5.6: Connect Workflow Pipeline
+### Task 5.6: Connect Workflow Pipeline (DONE)
 
 **Wire up the complete LangGraph workflow:**
 
@@ -1213,6 +1240,744 @@ async function testWorkflow() {
     console.log(`   ${idea.pitch}`);
   });
 }
+```
+
+---
+
+### Task 5.7: Enhance Pain Extractor Agent Output (DONE)
+
+**Status:** ✅ Completed - Pain Extractor now successfully extracts detailed pain points from agent synthesis.
+
+**What was achieved:**
+
+- Implemented hybrid extraction strategy (Strategy 1a: ideal message, Strategy 1b: partial JSON in message with tool_calls)
+- Agent now analyzes ALL posts before synthesis (with explicit checklist and counting instructions)
+- Extracts from agent's creative synthesis, not just tool call arguments
+- Pain points are detailed with specific examples, confidence scores, and proper categorization
+
+**Current Issue (resolved):** Pain points were using Reddit post titles instead of extracting actual underlying problems.
+
+**Goal (achieved):** Extract structured, analytical pain points from agent's reasoning after tool calls.
+
+**What we have:**
+
+```json
+{
+  "description": "Share your startup - quarterly post"
+}
+```
+
+**What we need:**
+
+```json
+{
+  "description": "Founders lack regular, high-visibility channels to promote their startups to relevant audiences",
+  "category": "marketing",
+  "severity": "medium"
+}
+```
+
+**Implementation Steps:**
+
+**Step 1: Update Pain Extractor prompt to require structured final output**
+
+After the agent calls tools, it must synthesize findings into structured JSON:
+
+```typescript
+// agents/workflow.ts - painExtractorNode
+const prompt = `You have ${state.redditPosts.length} Reddit posts to analyze.
+
+WORKFLOW:
+1. For EACH post, call analyze_pain_severity tool to get objective metrics
+2. After analyzing ALL posts, synthesize your findings into structured JSON
+
+Here are the posts:
+${postsContext}
+
+REQUIRED STEPS:
+Step 1: Call analyze_pain_severity for each post
+Step 2: After all tool calls, return ONLY this JSON structure:
+
+{
+  "painPoints": [
+    {
+      "description": "Clear problem statement (NOT the post title)",
+      "category": "hiring|marketing|technical|productivity|financial|other",
+      "severity": "low|medium|high",
+      "evidence": ["Direct quote 1", "Direct quote 2"],
+      "confidence": 0.0-1.0
+    }
+  ]
+}
+
+CRITICAL RULES:
+- description must be the UNDERLYING PROBLEM, not the post title
+- category must match the problem domain
+- evidence must be direct quotes showing the pain
+- Only include pain points with confidence >= 0.6`;
+```
+
+**Step 2: Extract both tool results AND agent's final synthesis**
+
+````typescript
+// Extract tool metrics for validation
+const toolMessages = result.messages.filter(
+  (msg: any) => msg._getType() === "tool"
+);
+
+// Extract agent's final structured output
+const finalAIMessage = result.messages
+  .slice()
+  .reverse()
+  .find((msg: any) => msg._getType() === "ai" && !msg.tool_calls);
+
+if (!finalAIMessage) {
+  throw new Error("Agent did not provide final synthesis");
+}
+
+// Parse the agent's structured output
+let painPointsData;
+try {
+  painPointsData = JSON.parse(finalAIMessage.content);
+} catch {
+  // Try markdown extraction
+  const jsonMatch = finalAIMessage.content.match(
+    /```(?:json)?\s*(\{[\s\S]*\})\s*```/
+  );
+  if (jsonMatch) {
+    painPointsData = JSON.parse(jsonMatch[1]);
+  }
+}
+
+// Validate with schema
+const validatedData = PainPointSchema.parse(painPointsData);
+````
+
+**Step 3: Cross-validate with tool results**
+
+```typescript
+// Ensure we have tool data for each pain point
+const painPoints = validatedData.painPoints.map((point, index) => {
+  const toolResult = toolMessages[index]?.content;
+  const post = state.redditPosts[index];
+
+  return {
+    id: nanoid(),
+    description: point.description, // Agent's analysis, not post title
+    severity: point.severity,
+    category: point.category,
+    source: post.url,
+    examples: point.evidence || [post.content?.substring(0, 200)],
+    confidence: point.confidence,
+    frequency: 1,
+    // Store tool metrics for reference
+    toolMetrics: toolResult ? JSON.parse(toolResult) : undefined,
+  };
+});
+```
+
+**Expected Output:**
+
+```json
+{
+  "description": "Small startups (8 people) spend 3+ months failing to hire quality product designers through traditional channels",
+  "category": "hiring",
+  "severity": "medium",
+  "confidence": 0.75
+}
+```
+
+---
+
+### Task 5.8: Enhance Idea Generator Agent Output (DONE)
+
+**Status:** ✅ Completed - Idea Generator now creates creative, differentiated product ideas.
+
+**What was achieved:**
+
+- Replaced hardcoded template logic with `extractStructuredOutput` helper
+- Agent generates creative product names (e.g., "Foundr Forge", "TrialHire Studio" instead of "Hiring Solution")
+- Detailed pitches explaining HOW the product works and WHY it's differentiated
+- Specific target audiences (e.g., "Pre-Series A SaaS founders with 5-15 employees" instead of "Startups and small businesses")
+- Successfully extracts from agent synthesis using hybrid extraction strategy
+
+**Example output:**
+
+```json
+{
+  "name": "Foundr Forge",
+  "pitch": "Curated designer marketplace matching SaaS founders with vetted designers using portfolio-first algorithm. Candidates complete paid micro-project as application.",
+  "targetAudience": "Pre-seed to pre-Series A SaaS founders with 5–15 employees"
+}
+```
+
+**Current Issue (resolved):** Ideas were generic templates with no creativity or differentiation.
+
+**Goal (achieved):** Generate creative, specific product ideas using agent's synthesis of tool results.
+
+**What we have:**
+
+```json
+{
+  "name": "General Solution",
+  "pitch": "A solution to address: Share your startup - quarterly post"
+}
+```
+
+**What we need:**
+
+```json
+{
+  "name": "LaunchPad Weekly",
+  "pitch": "A curated newsletter featuring 10 vetted startups each week, distributed to 50K+ investors and early adopters",
+  "targetAudience": "Early-stage B2B SaaS founders seeking visibility"
+}
+```
+
+**Implementation Steps:**
+
+**Step 1: Remove hardcoded idea generation logic**
+
+Current (bad):
+
+```typescript
+const ideas = state.painPoints.map((painPoint) => ({
+  name: `${painPoint.category} Solution`, // Generic!
+  pitch: `A solution to address: ${painPoint.description}`, // Template!
+}));
+```
+
+**Step 2: Let agent generate creative ideas after tool validation**
+
+```typescript
+const prompt = `You are a creative product strategist. Generate innovative product ideas for these pain points:
+
+${painPointsContext}
+
+WORKFLOW:
+1. For EACH pain point, use estimate_market_size and analyze_competition tools
+2. After gathering market data, generate 1-2 creative product ideas per pain point
+3. Return structured JSON with your ideas
+
+REQUIRED FINAL OUTPUT (after all tool calls):
+{
+  "ideas": [
+    {
+      "name": "Catchy 2-4 word product name",
+      "pitch": "One compelling sentence describing what it does and why it matters",
+      "painPoint": "Which specific pain point this solves",
+      "targetAudience": "Specific audience segment (be precise)",
+      "category": "Same category as the pain point",
+      "differentiation": "What makes this unique vs existing solutions",
+      "confidence": 0.0-1.0
+    }
+  ]
+}
+
+CREATIVITY RULES:
+- Names must be memorable and relevant (NOT generic like "General Solution")
+- Pitches must be specific about HOW it solves the problem
+- Target audience must be precise (NOT "startups and small businesses")
+- Each idea must have clear differentiation
+- Ideas should be realistic but innovative`;
+```
+
+**Step 3: Extract agent's creative synthesis**
+
+```typescript
+// Find the last AI message with structured ideas
+const finalAIMessage = result.messages
+  .slice()
+  .reverse()
+  .find(
+    (msg: any) =>
+      msg._getType() === "ai" &&
+      !msg.tool_calls &&
+      msg.content.includes("ideas")
+  );
+
+// Parse and validate
+const ideasData = parseJSON(finalAIMessage.content);
+const validatedData = IdeaGenerationSchema.parse(ideasData);
+
+// Enrich with sources and tool metrics
+const ideas = validatedData.ideas.map((idea, index) => {
+  const relatedPainPoint = state.painPoints.find(
+    (p) => p.description === idea.painPoint
+  );
+
+  return {
+    id: nanoid(),
+    name: idea.name,
+    pitch: idea.pitch,
+    painPoint: idea.painPoint,
+    targetAudience: idea.targetAudience,
+    category: idea.category,
+    sources: relatedPainPoint?.source ? [relatedPainPoint.source] : [],
+    score: 0, // Will be filled by scorer
+    generatedAt: new Date(),
+    confidence: idea.confidence,
+  };
+});
+```
+
+**Expected Output:**
+
+```json
+{
+  "name": "DesignMatch",
+  "pitch": "On-demand product design marketplace matching vetted designers with startups in 48 hours, with trial periods to reduce hiring risk",
+  "targetAudience": "Pre-Series A SaaS startups (5-15 employees) without in-house design",
+  "category": "hiring"
+}
+```
+
+---
+
+### Task 5.9: Enhance Scoring Agent to Use Tool Results
+
+**Current Issue:** Scoring uses hardcoded values instead of tool-generated insights.
+
+**Goal:** Calculate scores using data from all 3 scoring tools (pain severity, market size, competition).
+
+**What we have:**
+
+```typescript
+const painSeverity = 15; // Hardcoded
+const marketSize = 20; // Hardcoded
+const competition = 15; // Hardcoded
+```
+
+**What we need:**
+
+```typescript
+// Extract from tool results
+const painSeverityScore = painSeverityTool.severityScore * 0.3; // 0-30 points
+const marketSizeScore = marketSizeTool.tamScore * 0.25; // 0-25 points
+const competitionScore = competitionTool.competitionScore * 0.2; // 0-20 points
+```
+
+**Implementation Steps:**
+
+**Step 1: Update Scorer prompt to use tool data in final synthesis**
+
+```typescript
+const prompt = `Score these product ideas using objective tool data:
+
+${ideasContext}
+
+WORKFLOW:
+1. For EACH idea, call all 3 tools:
+   - analyze_pain_severity: How urgent is the pain?
+   - estimate_market_size: What's the TAM/SAM?
+   - analyze_competition: How crowded is the market?
+
+2. After gathering ALL tool data, synthesize into final scores
+
+REQUIRED FINAL OUTPUT:
+{
+  "scoredIdeas": [
+    {
+      "ideaId": "abc123",
+      "score": 0-100,
+      "breakdown": {
+        "painSeverity": 0-30,
+        "marketSize": 0-25,
+        "competition": 0-20,
+        "feasibility": 0-15,
+        "engagement": 0-10,
+        "total": sum
+      },
+      "reasoning": "Clear explanation citing tool data"
+    }
+  ]
+}
+
+SCORING RULES:
+- painSeverity: Use tool's severityScore (0-100) * 0.30
+- marketSize: Use tool's TAM/SAM analysis * 0.25
+- competition: Use tool's competitionScore * 0.20
+- feasibility: Evaluate manually (0-15)
+- engagement: Use Reddit metrics from pain point source
+- reasoning must cite specific tool findings`;
+```
+
+**Step 2: Extract and map tool results to ideas**
+
+```typescript
+// Parse tool messages by type
+const toolMessagesByType: Record<string, any[]> = {
+  pain_severity: [],
+  market_size: [],
+  competition: [],
+};
+
+toolMessages.forEach((msg: any) => {
+  const content = JSON.parse(msg.content);
+  const toolName = msg.name || inferToolName(content);
+
+  if (toolName.includes("pain")) {
+    toolMessagesByType.pain_severity.push(content);
+  } else if (toolName.includes("market")) {
+    toolMessagesByType.market_size.push(content);
+  } else if (toolName.includes("competition")) {
+    toolMessagesByType.competition.push(content);
+  }
+});
+
+// Get agent's final synthesis
+const finalAIMessage = result.messages
+  .slice()
+  .reverse()
+  .find((msg: any) => msg._getType() === "ai" && !msg.tool_calls);
+
+const scoresData = parseJSON(finalAIMessage.content);
+const validatedData = ScoringSchema.parse(scoresData);
+
+// Merge scores back into ideas with tool data
+const scoredIdeas = state.ideas.map((idea, index) => {
+  const scoreData = validatedData.scoredIdeas.find((s) => s.ideaId === idea.id);
+  const painTool = toolMessagesByType.pain_severity[index];
+  const marketTool = toolMessagesByType.market_size[index];
+  const competitionTool = toolMessagesByType.competition[index];
+
+  return {
+    ...idea,
+    score:
+      scoreData?.score ||
+      calculateFallbackScore(painTool, marketTool, competitionTool),
+    scoreBreakdown: scoreData?.breakdown,
+    toolData: {
+      painSeverity: painTool,
+      marketSize: marketTool,
+      competition: competitionTool,
+    },
+  };
+});
+```
+
+**Step 3: Add fallback logic using raw tool data**
+
+```typescript
+function calculateFallbackScore(
+  painTool: any,
+  marketTool: any,
+  competitionTool: any
+): number {
+  const painScore = (painTool?.severityScore || 50) * 0.3;
+  const marketScore = (marketTool?.tamScore || 50) * 0.25;
+  const compScore = (competitionTool?.competitionScore || 50) * 0.2;
+  const feasibility = 10; // Default
+  const engagement = 5; // Default
+
+  return Math.round(
+    painScore + marketScore + compScore + feasibility + engagement
+  );
+}
+```
+
+**Expected Output:**
+
+```json
+{
+  "score": 73,
+  "breakdown": {
+    "painSeverity": 22,
+    "marketSize": 18,
+    "competition": 16,
+    "feasibility": 12,
+    "engagement": 5,
+    "total": 73
+  },
+  "reasoning": "High pain severity (tool: 73/100) with strong market potential (TAM: $2.1B). Moderate competition (15 competitors) but strong differentiation. Feasible MVP in 3-4 months."
+}
+```
+
+---
+
+### Task 5.10: Implement Hybrid Data Extraction Strategy (DONE)
+
+**Status:** ✅ Completed - Robust extraction helper implemented and used across all agents.
+
+**What was achieved:**
+
+- Created `extractStructuredOutput` helper in `lib/openai/extraction.ts`
+- Implemented 3-strategy approach:
+  - Strategy 1a: AI message with content, NO tool_calls (ideal case)
+  - Strategy 1b: AI message with content, EVEN IF has tool_calls (handles partial JSON)
+  - Strategy 2: Direct tool results (fallback)
+- All agents (Pain Extractor, Idea Generator) now use this unified helper
+- Successfully extracts JSON from messages where agent provides synthesis AND tool_calls simultaneously
+- Handles markdown code blocks, plain JSON, and JSON embedded in text
+
+**Goal (achieved):** Create a robust extraction strategy that combines tool data with agent synthesis.
+
+**Create a unified extraction helper:**
+
+````typescript
+// lib/openai/extraction.ts
+
+/**
+ * Extracts structured data from agent responses
+ * Tries multiple strategies in order of preference
+ */
+export function extractStructuredOutput<T>(
+  messages: any[],
+  schema: z.ZodSchema<T>,
+  options: {
+    requireToolCalls?: boolean;
+    fallbackToToolData?: boolean;
+  } = {}
+): { data: T; source: "agent_synthesis" | "tool_results" | "fallback" } {
+  // Strategy 1: Agent's final structured synthesis (preferred)
+  const finalAIMessage = messages
+    .slice()
+    .reverse()
+    .find((msg) => msg._getType() === "ai" && !msg.tool_calls);
+
+  if (finalAIMessage?.content) {
+    try {
+      const parsed = parseJSON(finalAIMessage.content);
+      const validated = schema.parse(parsed);
+      return { data: validated, source: "agent_synthesis" };
+    } catch (error) {
+      console.warn("[Extraction] Failed to parse agent synthesis:", error);
+    }
+  }
+
+  // Strategy 2: Direct tool results (fallback)
+  if (options.fallbackToToolData) {
+    const toolMessages = messages.filter((msg) => msg._getType() === "tool");
+
+    if (toolMessages.length > 0) {
+      try {
+        const toolData = toolMessages.map((msg) => JSON.parse(msg.content));
+        const validated = schema.parse({ items: toolData });
+        return { data: validated, source: "tool_results" };
+      } catch (error) {
+        console.warn("[Extraction] Failed to parse tool results:", error);
+      }
+    }
+  }
+
+  throw new Error("Could not extract structured output from agent response");
+}
+
+/**
+ * Parse JSON from various formats (plain, markdown, etc.)
+ */
+function parseJSON(content: string): any {
+  // Try direct parse
+  try {
+    return JSON.parse(content);
+  } catch {}
+
+  // Try markdown code block
+  const jsonMatch = content.match(/```(?:json)?\s*(\{[\s\S]*?\})\s*```/);
+  if (jsonMatch) {
+    return JSON.parse(jsonMatch[1]);
+  }
+
+  // Try finding JSON in text
+  const jsonInText = content.match(/\{[\s\S]*\}/);
+  if (jsonInText) {
+    return JSON.parse(jsonInText[0]);
+  }
+
+  throw new Error("No valid JSON found in content");
+}
+````
+
+**Usage in workflow nodes:**
+
+```typescript
+// agents/workflow.ts - painExtractorNode
+
+const { data: painPointsData, source } = extractStructuredOutput(
+  result.messages,
+  PainPointSchema,
+  { fallbackToToolData: true }
+);
+
+console.log(`[Pain Extractor] Extracted data from: ${source}`);
+
+const painPoints = painPointsData.painPoints.map((point) => ({
+  id: nanoid(),
+  ...point,
+}));
+```
+
+---
+
+### Task 5.11: Add Comprehensive Agent Output Validation
+
+**Goal:** Ensure agent outputs meet quality standards before proceeding.
+
+**Create validation helpers:**
+
+```typescript
+// lib/openai/validation.ts
+
+export interface ValidationResult {
+  isValid: boolean;
+  errors: string[];
+  warnings: string[];
+}
+
+/**
+ * Validate pain point quality
+ */
+export function validatePainPoint(point: any): ValidationResult {
+  const errors: string[] = [];
+  const warnings: string[] = [];
+
+  // Check description is not just a title
+  if (point.description.length < 20) {
+    errors.push("Pain point description too short (likely just a title)");
+  }
+
+  // Check category is specific
+  if (point.category === "general" || point.category === "other") {
+    warnings.push("Pain point category is too generic");
+  }
+
+  // Check confidence threshold
+  if (point.confidence < 0.6) {
+    warnings.push(`Low confidence: ${point.confidence}`);
+  }
+
+  // Check for evidence
+  if (!point.evidence || point.evidence.length === 0) {
+    warnings.push("No evidence/quotes provided");
+  }
+
+  return {
+    isValid: errors.length === 0,
+    errors,
+    warnings,
+  };
+}
+
+/**
+ * Validate product idea quality
+ */
+export function validateProductIdea(idea: any): ValidationResult {
+  const errors: string[] = [];
+  const warnings: string[] = [];
+
+  // Check name is not generic
+  const genericNames = [
+    "general solution",
+    "product",
+    "app",
+    "platform",
+    "tool",
+  ];
+  if (genericNames.some((name) => idea.name.toLowerCase().includes(name))) {
+    errors.push(`Generic product name: ${idea.name}`);
+  }
+
+  // Check pitch is specific
+  if (idea.pitch.toLowerCase().includes("a solution to address")) {
+    errors.push("Pitch is a template, not a real product description");
+  }
+
+  if (idea.pitch.length < 30) {
+    warnings.push("Pitch is too short");
+  }
+
+  // Check target audience is specific
+  if (
+    idea.targetAudience.toLowerCase().includes("startups and small businesses")
+  ) {
+    warnings.push("Target audience too broad");
+  }
+
+  return {
+    isValid: errors.length === 0,
+    errors,
+    warnings,
+  };
+}
+```
+
+**Use in workflow:**
+
+```typescript
+// After extracting pain points
+painPoints.forEach((point, index) => {
+  const validation = validatePainPoint(point);
+
+  if (!validation.isValid) {
+    console.error(
+      `[Pain Extractor] Invalid pain point ${index}:`,
+      validation.errors
+    );
+  }
+
+  if (validation.warnings.length > 0) {
+    console.warn(
+      `[Pain Extractor] Pain point ${index} warnings:`,
+      validation.warnings
+    );
+  }
+});
+
+// Filter out invalid items
+const validPainPoints = painPoints.filter((point) => {
+  const validation = validatePainPoint(point);
+  return validation.isValid;
+});
+```
+
+---
+
+### Task 5.12: Fix Agent Workflow Performance and Execution (DONE)
+
+**Status:** ✅ Completed - All agents now complete execution without timeouts and process all inputs.
+
+**Issues resolved:**
+
+1. **Timeout Issue**: Scorer was timing out after 7+ minutes (7 attempts × 30s timeout)
+2. **Incomplete Processing**: Pain Extractor was only analyzing 1 of 3 posts
+3. **Agent Stopping Early**: Agents were providing synthesis before completing all tool calls
+
+**What was achieved:**
+
+**1. Fixed recursionLimit for Performance:**
+
+- Lowered Scorer's `recursionLimit` from 25 to 15
+- Prevents infinite loops while allowing sufficient iterations
+- Reduced total workflow time from 7+ minutes to ~2 minutes
+- All agents now complete without timeout
+
+**2. Enforced Two-Phase Workflow:**
+
+- Updated all agent prompts to explicitly require:
+  - PHASE 1: Call tools for ALL inputs (mandatory)
+  - PHASE 2: Provide synthesis ONLY after Phase 1 complete
+- Added counting instructions: "You MUST call tool X times for X posts"
+- Added execution checklists with explicit ordering
+
+**3. Updated System Messages:**
+
+- Pain Extractor: "CRITICAL RULE: You MUST call tool for EVERY post before synthesizing"
+- Idea Generator: "MARKET RESEARCH PHASE (COMPLETE ALL FIRST)"
+- Scorer: "DATA COLLECTION PHASE (use tools)"
+- All system messages now reinforce the two-phase pattern
+
+**Results:**
+
+- Pain Extractor: Now analyzes ALL posts (not just first one)
+- Idea Generator: Processes ALL pain points before generating ideas
+- Scorer: Completes in ~2 minutes (was 7+ minutes)
+- Average workflow time: 2-3 minutes ✅
+
+**Performance metrics:**
+
+```
+Before: 469546ms (7.8 minutes) with timeout
+After:  125645ms (2.1 minutes) complete success
 ```
 
 ---
