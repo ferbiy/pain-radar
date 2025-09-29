@@ -617,11 +617,11 @@ export default function LoginPage() {
 
 ---
 
-## Epic 4: Reddit Integration (Backend Service)
+## Epic 4: Reddit Integration (Backend Service) (DONE)
 
 **Note:** This is for backend API access only. Users authenticate only through Supabase.
 
-### Task 4.1: Set Up Reddit API Service Authentication
+### Task 4.1: Set Up Reddit API Service Authentication (DONE)
 
 **Step 1: Create Reddit App for Backend Data Fetching**
 
@@ -815,19 +815,19 @@ REDDIT_USERNAME=your_reddit_bot_username  # Bot account for API access
 REDDIT_PASSWORD=your_reddit_bot_password  # Bot account password
 ```
 
-### Task 4.2: Build Data Fetching Logic
+### Task 4.2: Build Data Fetching Logic (DONE)
 
 - Create function to fetch posts from multiple subreddits
 - Extract comments with high engagement
 - Format data for AI processing
 
-### Task 4.3: Implement Caching Layer
+### Task 4.3: Implement Caching Layer (DONE)
 
 - Cache Reddit data in memory
 - Add 6-hour expiration
 - Create cache invalidation logic
 
-### Task 4.4: Add Rate Limiting
+### Task 4.4: Add Rate Limiting (DONE)
 
 - Implement simple delay between requests
 - Handle rate limit errors
