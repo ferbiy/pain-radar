@@ -1,25 +1,42 @@
-import OpenAI from "openai";
+import { ChatOpenAI } from "@langchain/openai";
 import { env } from "@/config/env";
 
 /**
  * OpenAI Client Configuration
- * Centralized OpenAI client for all AI agents
+ *
+ * REFACTORED: This file now only contains basic configuration.
+ * For agent creation, use lib/openai/agents.ts
+ * For structured output, use lib/openai/schemas.ts
  */
-export const openai = new OpenAI({
-  apiKey: env.openai.apiKey,
-});
+
+/**
+ * Create base ChatOpenAI instance
+ * Used internally by agents in lib/openai/agents.ts
+ */
+export const createChatOpenAI = (config?: {
+  maxTokens?: number;
+}) => {
+  return new ChatOpenAI({
+    model: env.openai.model,
+    apiKey: env.openai.apiKey,
+    maxTokens: config?.maxTokens ?? 2000,
+    timeout: 30000, // 30 seconds
+  });
+};
 
 /**
  * Default configuration for AI agents
+ * Kept for backward compatibility
  */
 export const DEFAULT_AGENT_CONFIG = {
-  model: env.openai.model, // "gpt-4o-mini" from env
+  model: env.openai.model,
   maxTokens: 2000,
-  timeout: 30000, // 30 seconds
+  timeout: 30000,
 } as const;
 
 /**
  * Specific configurations for different agent types
+ * @deprecated Use AGENT_PRESETS from lib/openai/agents.ts instead
  */
 export const AGENT_CONFIGS = {
   painExtractor: {
@@ -37,63 +54,42 @@ export const AGENT_CONFIGS = {
 } as const;
 
 /**
- * Helper function to create chat completion with error handling
+ * @deprecated No longer used. Agents now handle completions internally.
+ * See lib/openai/agents.ts for proper agent creation with tools.
+ *
+ * This function was part of the old implementation that made direct LLM calls.
+ * The new architecture uses createReactAgent which handles tool use autonomously.
  */
-export async function createChatCompletion(
-  messages: OpenAI.Chat.Completions.ChatCompletionMessageParam[],
-  config: {
-    model: string;
-    maxTokens: number;
-    timeout: number;
-  } = DEFAULT_AGENT_CONFIG
-): Promise<{
+export async function createChatCompletion(): Promise<{
   content: string;
   tokensUsed: number;
   processingTimeMs: number;
 }> {
-  const startTime = Date.now();
+  console.warn(
+    "[OpenAI] createChatCompletion is deprecated. Use agents from lib/openai/agents.ts instead."
+  );
 
-  try {
-    const completion = await openai.chat.completions.create({
-      model: config.model,
-      messages,
-      max_completion_tokens: config.maxTokens,
-      response_format: { type: "json_object" },
-    });
-
-    const content = completion.choices[0]?.message?.content || "";
-    const tokensUsed = completion.usage?.total_tokens || 0;
-    const processingTimeMs = Date.now() - startTime;
-
-    // Check for empty response which indicates an issue
-    if (!content.trim()) {
-      console.warn("[OpenAI] Received empty response from API");
-      throw new Error("OpenAI API returned empty content");
-    }
-
-    return {
-      content,
-      tokensUsed,
-      processingTimeMs,
-    };
-  } catch (error) {
-    console.error("[OpenAI] Chat completion failed:", error);
-
-    throw new Error(
-      `OpenAI API error: ${error instanceof Error ? error.message : "Unknown error"}`
-    );
-  }
+  throw new Error(
+    "createChatCompletion is deprecated. Use createPainExtractorAgent, " +
+      "createIdeaGeneratorAgent, or createScorerAgent from lib/openai/agents.ts"
+  );
 }
 
 /**
- * Helper function to parse JSON response with error handling
+ * @deprecated No longer used. Use Zod schemas with structured output instead.
+ * See lib/openai/schemas.ts for proper schema definitions.
+ *
+ * The new approach uses schema.parse() which validates and throws proper errors.
  */
 export function parseJsonResponse<T>(content: string, fallback: T): T {
+  console.warn(
+    "[OpenAI] parseJsonResponse is deprecated. Use Zod schemas from lib/openai/schemas.ts instead."
+  );
+
   try {
     return JSON.parse(content) as T;
   } catch (error) {
     console.error("[OpenAI] Failed to parse JSON response:", error);
-    console.debug("[OpenAI] Raw content:", content);
 
     return fallback;
   }

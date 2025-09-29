@@ -1,10 +1,72 @@
 import { RedditPost } from "./reddit";
+import { Annotation } from "@langchain/langgraph";
 
 /**
- * Workflow State for LangGraph AI Agent Pipeline
- * Tracks the complete flow from Reddit data to scored product ideas
+ * Workflow State Annotation for LangGraph
+ * This is the proper way to define state in LangGraph using Annotation.Root
+ * Replaces the old MessagesAnnotation hack
  */
-export interface WorkflowState {
+export const WorkflowStateAnnotation = Annotation.Root({
+  // Workflow tracking
+  workflowId: Annotation<string>({
+    reducer: (x, y) => y ?? x,
+    default: () => "",
+  }),
+
+  threadId: Annotation<string>({
+    reducer: (x, y) => y ?? x,
+    default: () => "",
+  }),
+
+  currentStep: Annotation<WorkflowStep>({
+    reducer: (x, y) => y ?? x,
+    default: () => "initializing" as WorkflowStep,
+  }),
+
+  // Data flow - these ACCUMULATE
+  redditPosts: Annotation<RedditPost[]>({
+    reducer: (x, y) => (y !== undefined ? y : x), // Replace, don't accumulate
+    default: () => [],
+  }),
+
+  painPoints: Annotation<PainPoint[]>({
+    reducer: (x, y) => (y !== undefined ? y : x), // Replace, don't accumulate
+    default: () => [],
+  }),
+
+  ideas: Annotation<ProductIdeaLocal[]>({
+    reducer: (x, y) => (y !== undefined ? y : x), // Replace, don't accumulate
+    default: () => [],
+  }),
+
+  // Error tracking - ACCUMULATES
+  errors: Annotation<string[]>({
+    reducer: (x, y) => (y ? [...x, ...y] : x),
+    default: () => [],
+  }),
+
+  // Metadata
+  startTime: Annotation<number>({
+    reducer: (x, y) => y ?? x,
+    default: () => Date.now(),
+  }),
+
+  processingStats: Annotation<ProcessingStats | undefined>({
+    reducer: (x, y) => y ?? x,
+    default: () => undefined,
+  }),
+});
+
+/**
+ * TypeScript type derived from the annotation
+ */
+export type WorkflowState = typeof WorkflowStateAnnotation.State;
+
+/**
+ * Legacy interface for backward compatibility
+ * @deprecated Use WorkflowState type from WorkflowStateAnnotation instead
+ */
+export interface WorkflowStateLegacy {
   // Basic tracking
   workflowId: string;
   currentStep: WorkflowStep;
@@ -104,9 +166,11 @@ export interface AgentResult<T = WorkflowData> {
 
 /**
  * Workflow data structure that flows through the LangGraph nodes
+ * Now aligned with WorkflowState
  */
 export interface WorkflowData {
   workflowId: string;
+  threadId?: string;
   currentStep: WorkflowStep;
   redditPosts: RedditPost[];
   painPoints: PainPoint[];
