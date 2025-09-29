@@ -19,7 +19,7 @@ export const createChatOpenAI = (config?: {
   return new ChatOpenAI({
     model: env.openai.model,
     apiKey: env.openai.apiKey,
-    maxTokens: config?.maxTokens ?? 2000,
+    maxTokens: config?.maxTokens ?? 20000,
     timeout: 30000, // 30 seconds
   });
 };
@@ -30,7 +30,7 @@ export const createChatOpenAI = (config?: {
  */
 export const DEFAULT_AGENT_CONFIG = {
   model: env.openai.model,
-  maxTokens: 2000,
+  maxTokens: 20000,
   timeout: 30000,
 } as const;
 
@@ -41,15 +41,15 @@ export const DEFAULT_AGENT_CONFIG = {
 export const AGENT_CONFIGS = {
   painExtractor: {
     ...DEFAULT_AGENT_CONFIG,
-    maxTokens: 1500,
+    maxTokens: 15000,
   },
   ideaGenerator: {
     ...DEFAULT_AGENT_CONFIG,
-    maxTokens: 2000,
+    maxTokens: 20000,
   },
   scorer: {
     ...DEFAULT_AGENT_CONFIG,
-    maxTokens: 1000,
+    maxTokens: 10000,
   },
 } as const;
 

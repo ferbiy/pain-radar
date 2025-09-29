@@ -32,40 +32,41 @@ function createBaseLLM(config?: { maxTokens?: number }) {
  */
 export function createPainExtractorAgent() {
   const llm = createBaseLLM({
-    maxTokens: 1500,
+    maxTokens: 10000,
   });
 
-  const systemMessage = `You are an expert at identifying user pain points from Reddit discussions.
+  const systemMessage = `You are an expert at analyzing user pain points from Reddit discussions.
 
-Your task:
-1. Analyze Reddit posts to extract genuine problems people face
-2. Use the reddit_search tool to find relevant posts if needed
-3. Use analyze_pain_severity tool to objectively score pain points
-4. Focus on problems that could become product opportunities
+CRITICAL RULE: You MUST call analyze_pain_severity tool for EVERY post provided before synthesizing.
+DO NOT skip posts. DO NOT provide final JSON until ALL posts are analyzed.
 
-Guidelines:
-- Only extract REAL problems, not preferences or wishes
-- Look for explicit complaints about time, money, or frustration
-- Minimum confidence threshold: 0.6
-- Include specific quotes as evidence from the posts
-- Categorize by: hiring, marketing, technical, productivity, financial, or other
-- Pain points must be actionable and specific
+Your workflow has 2 phases:
+1. RESEARCH PHASE (COMPLETE ALL POSTS FIRST): Use tools to gather objective data
+2. SYNTHESIS PHASE (ONLY AFTER ALL POSTS): Provide final structured JSON with your analysis
 
-Output format:
-Return structured JSON with an array of pain points, each containing:
-- description: Clear problem statement
-- severity: "low", "medium", or "high"
-- category: Problem domain
-- examples: Array of direct quotes
-- confidence: 0-1 score
-- frequency: How many posts mention this
-- sources: Array of Reddit post URLs
+Research Phase:
+- Call analyze_pain_severity tool ONCE for EACH Reddit post provided (if given 3 posts, call 3 times)
+- You must analyze ALL posts before moving to synthesis phase
+- Extract the UNDERLYING PROBLEM from each post (not just the title)
+- Include specific quotes and details (company size, time spent, costs, etc.)
+- Focus on REAL problems with complaints about time, money, or frustration
+- Skip posts that are just announcements or threads with no real pain
 
-Quality criteria:
-- Each pain point should be distinct (no duplicates)
+Tool usage rules:
+- For painDescription: Write a clear problem statement with specifics
+- For examples: Include direct quotes showing the pain
+- For context: Pass the engagement metrics (upvotes/comments)
+- Only analyze posts where confidence would be >= 0.6
+
+Synthesis Phase:
+ONLY after calling analyze_pain_severity for ALL posts, provide your final analysis as structured JSON.
+Count your tool calls - if you were given N posts, you must have called the tool N times before synthesis.
+
+Quality standards:
+- Pain descriptions must be actionable and specific
+- Include concrete details (e.g., "8-person SaaS startup", "3 months", "zero applications")
 - Focus on high-severity, high-frequency problems
-- Maximum 5 pain points per analysis
-- Only include pain points with confidence >= 0.6`;
+- Each problem should be distinct (no duplicates)`;
 
   return createReactAgent({
     llm,
@@ -91,16 +92,22 @@ Quality criteria:
  */
 export function createIdeaGeneratorAgent() {
   const llm = createBaseLLM({
-    maxTokens: 2000,
+    maxTokens: 10000,
   });
 
   const systemMessage = `You are a creative product strategist who generates innovative product ideas.
 
-Your task:
-1. Transform pain points into viable product concepts
-2. Use estimate_market_size tool to validate market potential
-3. Use analyze_competition tool to check competitive landscape
-4. Create compelling product names and pitches
+Your workflow has 2 phases:
+1. MARKET RESEARCH PHASE: Use tools to validate opportunities
+2. CREATIVE SYNTHESIS PHASE: Generate ideas and provide structured JSON
+
+Market Research Phase:
+- For each pain point, call estimate_market_size to check potential
+- Call analyze_competition to assess competitive dynamics
+- Gather objective data to inform your creative decisions
+
+Creative Synthesis Phase:
+After gathering all market data, generate creative product ideas and return as JSON.
 
 Guidelines:
 - Each idea should solve a specific pain point
@@ -117,8 +124,8 @@ Idea generation strategy:
 - Prioritize pain points with high confidence scores
 
 Output format:
-Return structured JSON with an array of ideas, each containing:
-- name: Catchy, memorable product name
+After calling all tools, return structured JSON with an array of ideas, each containing:
+- name: Catchy, memorable product name (NOT generic like "Solution" or "Platform")
 - pitch: 2-sentence elevator pitch
 - painPoint: Which specific pain this solves
 - targetAudience: Specific target user group
@@ -158,18 +165,23 @@ Quality criteria:
  */
 export function createScorerAgent() {
   const llm = createBaseLLM({
-    maxTokens: 1000,
+    maxTokens: 10000,
   });
 
   const systemMessage = `You are an analytical evaluator who scores product ideas objectively.
 
-Your task:
-1. Score ideas on multiple dimensions (0-100 total)
-2. Use analyze_pain_severity for pain score (0-30 points)
-3. Use estimate_market_size for market score (0-25 points)
-4. Use analyze_competition for competition score (0-20 points)
-5. Evaluate feasibility manually (0-15 points)
-6. Consider engagement metrics (0-10 points)
+Your workflow has 2 phases:
+1. DATA COLLECTION PHASE: Use tools to gather objective metrics
+2. SCORING SYNTHESIS PHASE: Calculate final scores and provide structured JSON
+
+Data Collection Phase:
+For each idea, call all 3 analytical tools:
+- analyze_pain_severity: Evaluate pain intensity (0-30 points)
+- estimate_market_size: Assess market potential (0-25 points)
+- analyze_competition: Check competitive landscape (0-20 points)
+
+Scoring Synthesis Phase:
+After gathering all tool data, calculate final scores and return as JSON.
 
 Scoring breakdown:
 - Pain Severity (30 points max):
@@ -200,7 +212,7 @@ Scoring breakdown:
   * Scale down proportionally for lower engagement
 
 Output format:
-Return structured JSON with an array of scoredIdeas, each containing:
+After calling all tools, return structured JSON with an array of scoredIdeas, each containing:
 - ideaId: The ID of the idea being scored
 - score: Total score (0-100)
 - breakdown: Object with all 5 components and reasoning
@@ -232,12 +244,12 @@ Scoring guidelines:
  */
 export const AGENT_PRESETS = {
   painExtractor: {
-    maxTokens: 1500,
+    maxTokens: 15000,
   },
   ideaGenerator: {
-    maxTokens: 2000,
+    maxTokens: 20000,
   },
   scorer: {
-    maxTokens: 1000,
+    maxTokens: 10000,
   },
 } as const;
