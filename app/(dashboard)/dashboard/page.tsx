@@ -134,7 +134,7 @@ export default function DashboardPage() {
   };
 
   return (
-    <div className="space-y-6 px-8">
+    <div className="space-y-6">
       {/* Progress Dialog */}
       <GenerationProgress
         isOpen={isGenerating}
