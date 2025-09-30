@@ -55,7 +55,9 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       );
     }
 
-    const subreddits = sources?.map((s) => s.subreddit) || [];
+    // Remove 'r/' prefix if present (database stores 'r/startups', but RedditService expects 'startups')
+    const subreddits =
+      sources?.map((s) => s.subreddit.replace(/^r\//, "")) || [];
 
     if (subreddits.length === 0) {
       return NextResponse.json(
