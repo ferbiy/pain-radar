@@ -1272,7 +1272,7 @@ async function testWorkflow() {
 ```json
 {
   "description": "Founders lack regular, high-visibility channels to promote their startups to relevant audiences",
-  "category": "marketing",
+
   "severity": "medium"
 }
 ```
@@ -1302,7 +1302,7 @@ Step 2: After all tool calls, return ONLY this JSON structure:
   "painPoints": [
     {
       "description": "Clear problem statement (NOT the post title)",
-      "category": "hiring|marketing|technical|productivity|financial|other",
+      
       "severity": "low|medium|high",
       "evidence": ["Direct quote 1", "Direct quote 2"],
       "confidence": 0.0-1.0
@@ -1381,7 +1381,7 @@ const painPoints = validatedData.painPoints.map((point, index) => {
 ```json
 {
   "description": "Small startups (8 people) spend 3+ months failing to hire quality product designers through traditional channels",
-  "category": "hiring",
+
   "severity": "medium",
   "confidence": 0.75
 }
@@ -1467,7 +1467,7 @@ REQUIRED FINAL OUTPUT (after all tool calls):
       "pitch": "One compelling sentence describing what it does and why it matters",
       "painPoint": "Which specific pain point this solves",
       "targetAudience": "Specific audience segment (be precise)",
-      "category": "Same category as the pain point",
+      
       "differentiation": "What makes this unique vs existing solutions",
       "confidence": 0.0-1.0
     }

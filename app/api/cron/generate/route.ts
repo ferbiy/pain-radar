@@ -96,30 +96,64 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     );
 
     // Step 3: Fetch posts with fallback & deduplication
+    // Use sequential fetching with exponential backoff to respect rate limits
     const redditService = new RedditService();
     let allPosts: RedditPost[] = [];
     let limit = 3; // Start with 3 posts per subreddit
+    let retryAttempt = 0;
+    const maxRetries = 5;
 
-    while (allPosts.length === 0 && limit <= 100) {
-      console.log(`[Cron] Fetching up to ${limit} posts per subreddit...`);
-
-      // Fetch from all subreddits in parallel
-      const fetchPromises = subreddits.map((subreddit) =>
-        redditService
-          .fetchTrendingPosts(subreddit, limit)
-          .then((posts) => ({ status: "fulfilled" as const, value: posts }))
-          .catch((error) => ({ status: "rejected" as const, reason: error }))
+    while (allPosts.length === 0 && retryAttempt < maxRetries) {
+      console.log(
+        `[Cron] Attempt ${retryAttempt + 1}/${maxRetries}: Fetching up to ${limit} posts per subreddit...`
       );
 
-      const results = await Promise.all(fetchPromises);
+      const rawPosts: RedditPost[] = [];
+      let successCount = 0;
+      let failCount = 0;
 
-      // Flatten all posts from successful fetches
-      const rawPosts = results
-        .filter((r) => r.status === "fulfilled")
-        .flatMap((r) => r.value);
+      // Fetch subreddits SEQUENTIALLY (not in parallel) with delays
+      for (const subreddit of subreddits) {
+        try {
+          // Add delay between requests (exponential backoff)
+          const delayMs = Math.min(1000 * Math.pow(1.5, retryAttempt), 30000); // 1s → 1.5s → 2.25s → ...
+
+          if (successCount > 0 || failCount > 0) {
+            console.log(`[Cron] Waiting ${delayMs}ms before next subreddit...`);
+            await new Promise((resolve) => setTimeout(resolve, delayMs));
+          }
+
+          const posts = await redditService.fetchTrendingPosts(
+            subreddit,
+            limit
+          );
+
+          rawPosts.push(...posts);
+          successCount++;
+          console.log(
+            `[Cron] ✅ Fetched ${posts.length} posts from r/${subreddit}`
+          );
+        } catch (error) {
+          failCount++;
+          console.error(
+            `[Cron] ❌ Failed to fetch from r/${subreddit}:`,
+            error instanceof Error ? error.message : error
+          );
+
+          // If it's a rate limit error, wait longer before continuing
+          if (error instanceof Error && error.message.includes("429")) {
+            const waitTime = 60000; // Wait 60 seconds for rate limit
+
+            console.warn(
+              `[Cron] Rate limit hit! Waiting ${waitTime / 1000}s before continuing...`
+            );
+            await new Promise((resolve) => setTimeout(resolve, waitTime));
+          }
+        }
+      }
 
       console.log(
-        `[Cron] Fetched ${rawPosts.length} total posts (before deduplication)`
+        `[Cron] Fetch complete: ${successCount} succeeded, ${failCount} failed (${rawPosts.length} total posts)`
       );
 
       // Deduplicate: filter out already-processed posts
@@ -132,8 +166,17 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       console.log(`[Cron] After deduplication: ${allPosts.length} new posts`);
 
       if (allPosts.length === 0) {
-        limit = Math.min(limit * 2, 100); // 3 → 6 → 12 → 24 → 48 → 96
-        console.log(`[Cron] No new posts found, increasing limit to ${limit}`);
+        retryAttempt++;
+
+        if (retryAttempt < maxRetries) {
+          limit = Math.min(limit + 2, 10); // Increase limit gradually: 3 → 5 → 7 → 9 → 10
+          const waitTime = 5000 * retryAttempt; // 5s → 10s → 15s → 20s
+
+          console.log(
+            `[Cron] No new posts found. Waiting ${waitTime / 1000}s before retry ${retryAttempt + 1} with limit ${limit}...`
+          );
+          await new Promise((resolve) => setTimeout(resolve, waitTime));
+        }
       }
     }
 

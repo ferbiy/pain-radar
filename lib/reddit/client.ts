@@ -7,9 +7,23 @@ import {
 } from "@/types/reddit-api";
 
 /**
+ * Rate limit information from Reddit API
+ */
+interface RateLimitInfo {
+  used: number;
+  remaining: number;
+  reset: number; // Timestamp when rate limit resets
+}
+
+/**
  * Reddit API Client for backend data fetching
  * This client is used by our backend service to fetch Reddit data
  * It does NOT handle user authentication (that's done via Supabase)
+ *
+ * Rate Limiting:
+ * - OAuth clients: 100 requests per minute
+ * - Rate limits are averaged over a 10-minute window
+ * - This client tracks and respects X-Ratelimit-* headers
  */
 export class RedditAPIClient {
   private client: ReturnType<typeof axios.create>;
@@ -17,6 +31,13 @@ export class RedditAPIClient {
   private accessToken: string | null = null;
 
   private tokenExpiry: number = 0;
+
+  // Rate limit tracking
+  private rateLimitInfo: RateLimitInfo = {
+    used: 0,
+    remaining: 100,
+    reset: 0,
+  };
 
   constructor() {
     this.client = axios.create({
@@ -27,14 +48,36 @@ export class RedditAPIClient {
       timeout: 10000, // 10 second timeout
     });
 
-    // Add response interceptor for error handling
+    // Add response interceptor for rate limit tracking and error handling
     this.client.interceptors.response.use(
-      (response) => response,
+      (response) => {
+        // Capture rate limit headers from successful responses
+        this.updateRateLimitInfo(response.headers);
+
+        return response;
+      },
       (error) => {
         const errorObj = error as {
-          response?: { data?: unknown };
+          response?: {
+            data?: unknown;
+            headers?: Record<string, string>;
+            status?: number;
+          };
           message?: string;
         };
+
+        // Capture rate limit headers even from error responses
+        if (errorObj.response?.headers) {
+          this.updateRateLimitInfo(errorObj.response.headers);
+        }
+
+        // Log rate limit errors with more detail
+        if (errorObj.response?.status === 429) {
+          console.error(
+            `[Reddit API] Rate limit exceeded! Reset in ${this.getSecondsUntilReset()}s`
+          );
+          console.error("[Reddit API] Rate limit info:", this.rateLimitInfo);
+        }
 
         console.error(
           "Reddit API Error:",
@@ -45,6 +88,88 @@ export class RedditAPIClient {
         return Promise.reject(error);
       }
     );
+  }
+
+  /**
+   * Update rate limit information from response headers
+   */
+  private updateRateLimitInfo(headers: Record<string, string>): void {
+    const used = headers["x-ratelimit-used"];
+    const remaining = headers["x-ratelimit-remaining"];
+    const reset = headers["x-ratelimit-reset"];
+
+    if (used !== undefined) {
+      this.rateLimitInfo.used = parseFloat(used);
+    }
+
+    if (remaining !== undefined) {
+      this.rateLimitInfo.remaining = parseFloat(remaining);
+    }
+
+    if (reset !== undefined) {
+      const resetSeconds = parseFloat(reset);
+
+      this.rateLimitInfo.reset = Date.now() + resetSeconds * 1000;
+    }
+
+    console.debug("[Reddit API] Rate limit updated:", {
+      used: this.rateLimitInfo.used,
+      remaining: this.rateLimitInfo.remaining,
+      resetIn: `${this.getSecondsUntilReset()}s`,
+    });
+  }
+
+  /**
+   * Get seconds until rate limit resets
+   */
+  private getSecondsUntilReset(): number {
+    if (this.rateLimitInfo.reset === 0) return 0;
+
+    const secondsUntilReset = Math.max(
+      0,
+      Math.ceil((this.rateLimitInfo.reset - Date.now()) / 1000)
+    );
+
+    return secondsUntilReset;
+  }
+
+  /**
+   * Check if we should wait before making the next request
+   * Returns the number of milliseconds to wait (0 if can proceed immediately)
+   */
+  async checkRateLimit(): Promise<number> {
+    // If we have very few requests remaining, wait for reset
+    if (this.rateLimitInfo.remaining < 5 && this.rateLimitInfo.reset > 0) {
+      const waitTime = (this.getSecondsUntilReset() + 1) * 1000; // +1 second buffer
+
+      console.warn(
+        `[Reddit API] Only ${this.rateLimitInfo.remaining} requests remaining. Waiting ${waitTime}ms for rate limit reset`
+      );
+
+      return waitTime;
+    }
+
+    return 0;
+  }
+
+  /**
+   * Wait for rate limit to reset if necessary
+   */
+  async waitForRateLimit(): Promise<void> {
+    const waitTime = await this.checkRateLimit();
+
+    if (waitTime > 0) {
+      console.log(`[Reddit API] Waiting ${waitTime}ms for rate limit...`);
+      await new Promise((resolve) => setTimeout(resolve, waitTime));
+      console.log("[Reddit API] Rate limit wait complete");
+    }
+  }
+
+  /**
+   * Get current rate limit status
+   */
+  getRateLimitStatus(): RateLimitInfo {
+    return { ...this.rateLimitInfo };
   }
 
   /**
@@ -110,6 +235,7 @@ export class RedditAPIClient {
     sort: "hot" | "new" | "top" = "hot"
   ): Promise<RedditPost[]> {
     await this.ensureAuthenticated();
+    await this.waitForRateLimit(); // Wait if rate limit is low
 
     try {
       const { data } = await this.client.get<RedditListingResponse>(

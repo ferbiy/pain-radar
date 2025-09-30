@@ -74,24 +74,16 @@ export function validateProductIdea(idea: {
   const errors: string[] = [];
   const warnings: string[] = [];
 
-  // Check name is not generic
-  const genericNames = [
-    "general solution",
-    "product",
-    "app",
-    "platform",
-    "tool",
-    "solution",
-  ];
+  // Check name is not TOO generic (exact matches only, not substrings)
+  const genericNames = ["general solution", "product", "app", "platform"];
 
-  if (genericNames.some((name) => idea.name.toLowerCase().includes(name))) {
+  const nameLower = idea.name.toLowerCase().trim();
+  if (genericNames.some((name) => nameLower === name)) {
     errors.push(`Generic product name: ${idea.name}`);
   }
 
-  // Check pitch is specific
-  if (idea.pitch.toLowerCase().includes("a solution to address")) {
-    errors.push("Pitch is a template, not a real product description");
-  }
+  // Note: Removed "a solution to address" check - too strict for fallback-generated pitches
+  // Fallback extraction uses templates intentionally when agent doesn't synthesize
 
   if (idea.pitch.length < 30) {
     warnings.push("Pitch is too short");

@@ -23,7 +23,12 @@ import {
 } from "@/lib/openai/schemas";
 import { createCheckpointer } from "@/lib/openai/memory";
 import { createThreadConfig, resumeThreadConfig } from "@/lib/openai/threading";
-import { extractStructuredOutput } from "@/lib/openai/extraction";
+import {
+  extractStructuredOutput,
+  extractSinglePostPainPoint,
+  extractSinglePostIdea,
+  extractSinglePostScore,
+} from "@/lib/openai/extraction";
 import {
   validatePainPoint,
   validateProductIdea,
@@ -160,7 +165,7 @@ After calling analyze_pain_severity ${state.redditPosts.length} times, return th
     {
       "description": "The underlying problem",
       "severity": "low|medium|high",
-      "category": "hiring|marketing|technical|productivity|financial|other",
+      
       "examples": ["Quote 1", "Quote 2"],
       "confidence": 0.0-1.0,
       "frequency": 1,
@@ -490,7 +495,7 @@ After calling all tools, generate creative ideas and return this JSON:
       "pitch": "Compelling 2-sentence description of what it does and why it's differentiated",
       "painPoint": "The specific pain this solves",
       "targetAudience": "Specific audience segment (e.g., 'Pre-Series A SaaS founders with 5-15 employees')",
-      "category": "Business category from the pain point",
+      
       "sources": ["Reddit URL where this pain was found"],
       "confidence": 0.0-1.0
     }
@@ -1096,6 +1101,208 @@ export async function resumeWorkflow(
       success: false,
       error: error instanceof Error ? error.message : "Resume failed",
       processingTimeMs: 0,
+    };
+  }
+}
+
+/**
+ * Process a single Reddit post through the complete workflow
+ * Extract pain point → Generate idea → Score → Return idea
+ *
+ * This is optimized for individual post processing (no batching)
+ * Used by post_processor jobs in the queue
+ */
+export async function runSinglePostWorkflow(
+  post: RedditPost
+): Promise<AgentResult<ProductIdeaLocal | null>> {
+  const startTime = Date.now();
+
+  console.log(
+    `[Single Post Workflow] Processing post: ${post.id} (${post.title.substring(0, 50)}...)`
+  );
+
+  try {
+    // Step 1: Extract pain point
+    const painExtractorAgent = createPainExtractorAgent();
+    const painPointMessages = await painExtractorAgent.invoke(
+      {
+        messages: [
+          new HumanMessage(
+            `Analyze this Reddit post and extract the pain point:\n\nTitle: ${post.title}\n\nContent: ${post.content}\n\nSubreddit: ${post.subreddit}\n\nComments (for context):\n${
+              post.comments
+                ?.slice(0, 5)
+                .map((c) => `- ${c.body}`)
+                .join("\n") || "No comments"
+            }`
+          ),
+        ],
+      },
+      { recursionLimit: 6 } // Single post - allows 2 tool calls + synthesis
+    );
+
+    // Extract pain point from agent response (handles both synthesis and tool results)
+    const painPointData = extractSinglePostPainPoint(
+      painPointMessages.messages,
+      {
+        description: post.content || post.title,
+        title: post.title,
+        url: post.url,
+      }
+    );
+
+    console.log(
+      `[Single Post Workflow] Pain point extracted: ${painPointData.description.substring(0, 60)}...`
+    );
+
+    // Build pain point with all required fields
+    const painPoint: PainPoint = {
+      id: nanoid(),
+      source: post.url,
+      description: painPointData.description,
+      severity: painPointData.severity,
+      confidence: painPointData.confidence,
+      category:
+        painPointData.category ||
+        inferCategoryFromDescription(painPointData.description),
+      examples: painPointData.examples || [],
+      frequency: 1, // Single post = frequency 1
+    };
+
+    // Validate pain point
+    const validation = validatePainPoint(painPoint);
+
+    if (!validation.isValid) {
+      console.warn(
+        `[Single Post Workflow] Invalid pain point: ${validation.errors.join(", ")}`
+      );
+
+      return {
+        success: false,
+        error: `Invalid pain point: ${validation.errors.join(", ")}`,
+        data: null,
+        processingTimeMs: Date.now() - startTime,
+      };
+    }
+
+    console.log(
+      `[Single Post Workflow] Pain point: ${painPoint.description.substring(0, 80)}...`
+    );
+
+    // Step 2: Generate idea from pain point
+    const ideaGeneratorAgent = createIdeaGeneratorAgent();
+    const ideaMessages = await ideaGeneratorAgent.invoke(
+      {
+        messages: [
+          new HumanMessage(
+            `Based on this pain point, generate a product idea:\n\nPain Point: ${painPoint.description}\n\nCategory: ${painPoint.category}\n\nEvidence: ${painPoint.examples?.join(", ") || "See Reddit post"}`
+          ),
+        ],
+      },
+      { recursionLimit: 6 } // Single post - allows 2 tool calls + synthesis
+    );
+
+    // Extract idea from agent response (handles both synthesis and tool-based construction)
+    const ideaData = extractSinglePostIdea(ideaMessages.messages, {
+      description: painPoint.description,
+      category: painPoint.category,
+    });
+
+    console.log(`[Single Post Workflow] Idea generated: ${ideaData.name}`);
+
+    // Validate idea
+    const ideaValidation = validateProductIdea(ideaData);
+
+    if (!ideaValidation.isValid) {
+      console.warn(
+        `[Single Post Workflow] Invalid idea: ${ideaValidation.errors.join(", ")}`
+      );
+
+      return {
+        success: false,
+        error: `Invalid idea: ${ideaValidation.errors.join(", ")}`,
+        data: null,
+        processingTimeMs: Date.now() - startTime,
+      };
+    }
+
+    const idea: ProductIdeaLocal = {
+      id: nanoid(),
+      score: 0, // Will be set by scorer
+      generatedAt: new Date(),
+      ...ideaData,
+      sources: [post.url],
+      confidence: painPointData.confidence, // Inherit confidence from pain point
+    };
+
+    // Step 3: Score the idea
+    const scorerAgent = createScorerAgent();
+    const scoringMessages = await scorerAgent.invoke(
+      {
+        messages: [
+          new HumanMessage(
+            `Score this product idea:\n\nName: ${idea.name}\n\nPitch: ${idea.pitch}\n\nTarget Audience: ${idea.targetAudience}\n\nPain Point: ${painPoint.description}`
+          ),
+        ],
+      },
+      { recursionLimit: 6 } // Single post - allows 2 tool calls + synthesis
+    );
+
+    // Extract score from agent response (handles both synthesis and tool-based calculation)
+    const scoringData = extractSinglePostScore(scoringMessages.messages, {
+      idea: {
+        name: idea.name,
+        pitch: idea.pitch,
+        category: idea.category,
+      },
+      painPoint: {
+        severity: painPoint.severity,
+        confidence: painPoint.confidence,
+      },
+      post: {
+        upvotes: post.score || 0,
+        numComments: post.numComments || 0,
+      },
+    });
+
+    console.log(`[Single Post Workflow] Idea scored: ${scoringData.score}/100`);
+
+    // Validate score breakdown
+    const scoreValidation = validateScoreBreakdown(scoringData.breakdown);
+
+    if (!scoreValidation.isValid) {
+      console.warn(
+        `[Single Post Workflow] Invalid score: ${scoreValidation.errors.join(", ")}`
+      );
+    }
+
+    const finalIdea: ProductIdeaLocal = {
+      ...idea,
+      score: scoringData.score,
+      scoreBreakdown: scoringData.breakdown,
+      confidence: 0.8, // Default confidence for single post workflow
+    };
+
+    const processingTimeMs = Date.now() - startTime;
+
+    console.log(
+      `[Single Post Workflow] ✅ Completed in ${processingTimeMs}ms: ${finalIdea.name} (${finalIdea.score}/100)`
+    );
+
+    return {
+      success: true,
+      data: finalIdea,
+      processingTimeMs,
+    };
+  } catch (error) {
+    const processingTimeMs = Date.now() - startTime;
+
+    console.error(`[Single Post Workflow] Failed:`, error);
+
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : "Unknown error",
+      data: null,
+      processingTimeMs,
     };
   }
 }

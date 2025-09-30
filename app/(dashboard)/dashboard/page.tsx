@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import {
@@ -23,9 +23,16 @@ interface DashboardStats {
   newToday: number;
 }
 
+interface JobStatus {
+  jobId: string;
+  status: string;
+  queuePosition?: number;
+}
+
 export default function DashboardPage() {
   const [isGenerating, setIsGenerating] = useState(false);
   const [lastRun, setLastRun] = useState<string | null>(null);
+  const [jobStatus, setJobStatus] = useState<JobStatus | null>(null);
   const [stats, setStats] = useState<DashboardStats>({
     totalIdeas: 0,
     highPotential: 0,
@@ -36,6 +43,9 @@ export default function DashboardPage() {
   const [trendingCategories, setTrendingCategories] = useState<
     { category: string; count: number }[]
   >([]);
+
+  // Ref to store polling interval for proper cleanup
+  const pollIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
   // Fetch dashboard data
   const fetchDashboardData = async () => {
@@ -95,41 +105,123 @@ export default function DashboardPage() {
     fetchDashboardData();
   }, []);
 
+  // Cleanup polling interval on component unmount
+  useEffect(() => {
+    return () => {
+      if (pollIntervalRef.current) {
+        clearInterval(pollIntervalRef.current);
+        pollIntervalRef.current = null;
+        console.log("[Dashboard] Cleaned up polling interval on unmount");
+      }
+    };
+  }, []);
+
   const handleGenerateIdeas = async () => {
     setIsGenerating(true);
 
-    toast.info("Starting idea generation...", {
-      description: "This will take 2-3 minutes. You can explore while we work!",
-    });
-
     try {
-      const response = await fetch("/api/cron/generate", {
+      // Step 1: Enqueue the job
+      const response = await fetch("/api/queue/enqueue", {
         method: "POST",
-        headers: {
-          "x-cron-secret": process.env.NEXT_PUBLIC_CRON_SECRET || "",
-        },
       });
 
-      const data = await response.json();
+      if (!response.ok) {
+        const error = await response.json();
 
-      if (response.ok) {
-        setLastRun(new Date().toLocaleString());
-        toast.success("Ideas generated successfully!", {
-          description: `Generated ${data.ideasGenerated} ideas in ${(data.processingTime / 1000).toFixed(1)}s`,
-        });
-        // Refresh dashboard data
-        fetchDashboardData();
-      } else {
-        toast.error("Generation failed", {
-          description: data.error || "An unexpected error occurred",
-        });
+        throw new Error(error.error || "Failed to enqueue job");
       }
+
+      const { jobId } = await response.json();
+
+      setJobStatus({ jobId, status: "pending" });
+
+      toast.info("Your request has been queued", {
+        description: "Processing will begin shortly...",
+      });
+
+      // Clear any existing interval before creating a new one
+      if (pollIntervalRef.current) {
+        clearInterval(pollIntervalRef.current);
+        pollIntervalRef.current = null;
+      }
+
+      const MAX_POLL_DURATION = 10 * 60 * 1000; // 10 minutes timeout
+      const pollStartTime = Date.now();
+
+      // Step 2: Poll for status with timeout protection
+      pollIntervalRef.current = setInterval(async () => {
+        try {
+          // Check if polling has exceeded timeout
+          if (Date.now() - pollStartTime > MAX_POLL_DURATION) {
+            if (pollIntervalRef.current) {
+              clearInterval(pollIntervalRef.current);
+              pollIntervalRef.current = null;
+            }
+            toast.error("Generation timed out", {
+              description: "Please try again or contact support",
+            });
+            setIsGenerating(false);
+            setJobStatus(null);
+
+            return;
+          }
+
+          const statusRes = await fetch(`/api/queue/status/${jobId}`);
+          const status = await statusRes.json();
+
+          setJobStatus({
+            jobId: status.jobId,
+            status: status.status,
+            queuePosition: status.queuePosition,
+          });
+
+          if (status.status === "pending" && status.queuePosition) {
+            toast.info(`Position in queue: ${status.queuePosition}`, {
+              id: "queue-position",
+            });
+          } else if (status.status === "processing") {
+            toast.info("Generating your ideas...", {
+              id: "queue-processing",
+              description: "This will take 2-3 minutes",
+            });
+          } else if (status.status === "completed") {
+            // Clear interval
+            if (pollIntervalRef.current) {
+              clearInterval(pollIntervalRef.current);
+              pollIntervalRef.current = null;
+            }
+            setLastRun(new Date().toLocaleString());
+
+            // Note: Coordinator job completes after spawning post_processor jobs
+            // Individual ideas will appear in the feed as those jobs complete
+            toast.success("Posts are being processed!", {
+              description: "Ideas will appear below as they're generated",
+            });
+            fetchDashboardData(); // Refresh dashboard data
+            setJobStatus(null);
+            setIsGenerating(false);
+          } else if (status.status === "failed") {
+            // Clear interval
+            if (pollIntervalRef.current) {
+              clearInterval(pollIntervalRef.current);
+              pollIntervalRef.current = null;
+            }
+            toast.error("Generation failed", {
+              description: status.error || "An unexpected error occurred",
+            });
+            setJobStatus(null);
+            setIsGenerating(false);
+          }
+        } catch (error) {
+          console.error("Status check error:", error);
+        }
+      }, 2000); // Poll every 2 seconds
     } catch (error) {
-      toast.error("Generation failed", {
+      toast.error("Failed to start generation", {
         description: error instanceof Error ? error.message : "Unknown error",
       });
-    } finally {
       setIsGenerating(false);
+      setJobStatus(null);
     }
   };
 
@@ -172,6 +264,24 @@ export default function DashboardPage() {
           )}
         </div>
       </div>
+
+      {/* Queue Status Indicator */}
+      {jobStatus && (
+        <div className="p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
+          <div className="flex items-center gap-3">
+            <div className="h-2 w-2 animate-pulse rounded-full bg-blue-500" />
+            <p className="text-sm font-medium text-blue-900 dark:text-blue-100">
+              {jobStatus.status === "pending" &&
+                jobStatus.queuePosition &&
+                `Position in queue: ${jobStatus.queuePosition}`}
+              {jobStatus.status === "pending" &&
+                !jobStatus.queuePosition &&
+                "Waiting in queue..."}
+              {jobStatus.status === "processing" && "Generating ideas..."}
+            </p>
+          </div>
+        </div>
+      )}
 
       {/* Stats Cards */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
