@@ -1,15 +1,75 @@
+"use client";
+
+import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Lightbulb, TrendingUp, Users, Zap } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Lightbulb, TrendingUp, Users, Zap, Play } from "lucide-react";
 
 export default function DashboardPage() {
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [lastRun, setLastRun] = useState<string | null>(null);
+
+  const handleGenerateIdeas = async () => {
+    setIsGenerating(true);
+
+    try {
+      const response = await fetch("/api/cron/generate", {
+        method: "POST",
+        headers: {
+          "x-cron-secret": process.env.NEXT_PUBLIC_CRON_SECRET || "",
+        },
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        setLastRun(new Date().toLocaleString());
+        alert(
+          `✅ Success! Generated ${data.ideasGenerated} ideas in ${(data.processingTime / 1000).toFixed(1)}s`
+        );
+      } else {
+        alert(`❌ Error: ${data.error}`);
+      }
+    } catch (error) {
+      alert(
+        `❌ Error: ${error instanceof Error ? error.message : "Unknown error"}`
+      );
+    } finally {
+      setIsGenerating(false);
+    }
+  };
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
-        <p className="text-muted-foreground">
-          Track product ideas and market trends from Reddit
-        </p>
+      <div className="flex items-start justify-between">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
+          <p className="text-muted-foreground">
+            Track product ideas and market trends from Reddit
+          </p>
+        </div>
+        <div className="space-y-2">
+          <Button
+            onClick={handleGenerateIdeas}
+            disabled={isGenerating}
+            size="lg"
+          >
+            {isGenerating ? (
+              <>
+                <div className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-background border-t-transparent" />
+                Generating...
+              </>
+            ) : (
+              <>
+                <Play className="mr-2 h-4 w-4" />
+                Generate Ideas
+              </>
+            )}
+          </Button>
+          {lastRun && (
+            <p className="text-xs text-muted-foreground">Last run: {lastRun}</p>
+          )}
+        </div>
       </div>
 
       {/* Stats Cards */}

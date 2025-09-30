@@ -2078,17 +2078,22 @@ export async function POST(request: Request) {
 
 ## Epic 8: Background Jobs
 
-### Task 8.1: Create Cron Endpoints
+### Task 8.1: Create Cron Endpoints (DONE)
 
-- Set up `/api/cron/generate` endpoint
-- Add `/api/cron/email` endpoint
-- Secure with API keys
+✅ **Completed:**
 
-### Task 8.2: Implement Generation Job
+- Created `/api/cron/generate` endpoint
+- Secured with CRON_SECRET header authentication
+- ⏭️ Skipped `/api/cron/email` (requires Epic 7)
 
-- Trigger Reddit data fetch
-- Run AI pipeline
-- Store results in database
+### Task 8.2: Implement Generation Job (DONE)
+
+✅ **Completed:**
+
+- Triggers Reddit data fetch (3 posts from r/startups)
+- Runs AI pipeline with full workflow
+- Stores ideas in Supabase `ideas` table
+- Returns generation stats and processing time
 
 ```typescript
 // pseudocode - app/api/cron/generate/route.ts
@@ -2113,17 +2118,18 @@ export async function POST(request: Request) {
 }
 ```
 
-### Task 8.3: Implement Email Job
+### Task 8.3: Implement Email Job (SKIPPED)
 
-- Query new ideas
-- Get active subscriptions
-- Send digest emails
+⏭️ **Skipped:** Requires Epic 7 (Email Subscription System)
 
-### Task 8.4: Add Manual Trigger
+### Task 8.4: Add Manual Trigger (DONE)
 
-- Create admin UI for manual runs
-- Add run status tracking
-- Show last run timestamp
+✅ **Completed:**
+
+- Added "Generate Ideas" button to dashboard
+- Shows loading state during generation
+- Displays last run timestamp
+- Shows success/error alerts with stats
 
 ---
 
