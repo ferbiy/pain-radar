@@ -105,7 +105,9 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
 
     while (allPosts.length === 0 && retryAttempt < maxRetries) {
       console.log(
-        `[Cron] Attempt ${retryAttempt + 1}/${maxRetries}: Fetching up to ${limit} posts per subreddit...`
+        `[Cron] Attempt ${
+          retryAttempt + 1
+        }/${maxRetries}: Fetching up to ${limit} posts per subreddit...`
       );
 
       const rawPosts: RedditPost[] = [];
@@ -145,7 +147,9 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
             const waitTime = 60000; // Wait 60 seconds for rate limit
 
             console.warn(
-              `[Cron] Rate limit hit! Waiting ${waitTime / 1000}s before continuing...`
+              `[Cron] Rate limit hit! Waiting ${
+                waitTime / 1000
+              }s before continuing...`
             );
             await new Promise((resolve) => setTimeout(resolve, waitTime));
           }
@@ -173,7 +177,9 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
           const waitTime = 5000 * retryAttempt; // 5s → 10s → 15s → 20s
 
           console.log(
-            `[Cron] No new posts found. Waiting ${waitTime / 1000}s before retry ${retryAttempt + 1} with limit ${limit}...`
+            `[Cron] No new posts found. Waiting ${
+              waitTime / 1000
+            }s before retry ${retryAttempt + 1} with limit ${limit}...`
           );
           await new Promise((resolve) => setTimeout(resolve, waitTime));
         }

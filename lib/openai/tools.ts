@@ -120,7 +120,11 @@ export const painSeverityTool = new DynamicStructuredTool({
       recommendation,
       reasoning:
         `Based on ${context.upvotes} upvotes and ${context.comments} comments, ` +
-        `${hasUrgentLanguage ? "with urgent language indicators" : "with moderate language"}, ` +
+        `${
+          hasUrgentLanguage
+            ? "with urgent language indicators"
+            : "with moderate language"
+        }, ` +
         `this pain point is rated as ${recommendation} severity.`,
     });
   },
@@ -298,7 +302,9 @@ export const competitionTool = new DynamicStructuredTool({
       reasoning:
         `${category} is a ${landscape} market. ` +
         `With ${keyFeatures.length} unique features, ` +
-        `this idea has ${competitionScore > 60 ? "good" : "challenging"} competitive positioning.`,
+        `this idea has ${
+          competitionScore > 60 ? "good" : "challenging"
+        } competitive positioning.`,
     });
   },
 });

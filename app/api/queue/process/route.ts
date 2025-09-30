@@ -274,7 +274,10 @@ export async function POST(request: NextRequest) {
         };
 
         console.log(
-          `[Queue Worker] Processing post: ${post.id} - ${post.title.substring(0, 50)}...`
+          `[Queue Worker] Processing post: ${post.id} - ${post.title.substring(
+            0,
+            50
+          )}...`
         );
 
         // Run single post workflow with timeout protection

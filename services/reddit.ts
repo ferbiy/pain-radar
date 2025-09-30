@@ -201,7 +201,9 @@ export class RedditService {
     subreddits: string[],
     postsPerSubreddit = 25
   ): Promise<RedditPost[]> {
-    const cacheKey = `multi_${subreddits.sort().join("_")}_${postsPerSubreddit}`;
+    const cacheKey = `multi_${subreddits
+      .sort()
+      .join("_")}_${postsPerSubreddit}`;
 
     // Check cache first
     const cached = this.getCachedData<RedditPost[]>(cacheKey);

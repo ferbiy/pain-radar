@@ -185,8 +185,8 @@ export function SubscribeForm() {
           {isSubmitting
             ? "Saving..."
             : existingSubscription
-              ? "Update"
-              : "Subscribe"}
+            ? "Update"
+            : "Subscribe"}
         </Button>
         {existingSubscription && (
           <Button type="button" onClick={handleCancel} variant="outline">

@@ -26,6 +26,7 @@ Using Cursor, develop a minimally viable SaaS that helps a first-time founder co
 - **Landing page (single page)** describing the product. Take inspiration from Tosnos SaaS Landing (Dribbble)—don’t copy; make a simple, neat layout (Hero block, value proposition, CTA “Get started”).
 - **Authentication:** sign up, log in, log out (Supabase Auth).
 - **Recommendations feed:** a list of fresh product ideas with a topic filter (e.g., devtools, health, education, etc.). Fields:
+
   - idea name
   - short pitch (1–2 sentences)
   - key pain/insight
@@ -55,6 +56,7 @@ Using Cursor, develop a minimally viable SaaS that helps a first-time founder co
 
 - GitHub repository (public or link-accessible).
 - `.cursor/` folder with:
+
   - **rules.md** — your rules/constraints for the AI (architecture, style, commit conventions).
   - **PROMPTS.md** — key prompts (5–10 items) with brief context and outcome.
   - full interaction history with Cursor: export using external tools.

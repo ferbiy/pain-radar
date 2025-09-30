@@ -38,7 +38,9 @@ export async function GET(
     };
 
     console.log(
-      `[Queue Status] Job ${jobId}: ${job.status}${queuePosition ? ` (position: ${queuePosition})` : ""}`
+      `[Queue Status] Job ${jobId}: ${job.status}${
+        queuePosition ? ` (position: ${queuePosition})` : ""
+      }`
     );
 
     return NextResponse.json(response);

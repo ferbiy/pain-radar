@@ -684,8 +684,9 @@ export class RedditAPIClient {
 
     this.accessToken = data.access_token;
     this.tokenExpiry = Date.now() + data.expires_in * 1000 - 60000; // 1 min buffer
-    this.client.defaults.headers.common["Authorization"] =
-      `Bearer ${data.access_token}`;
+    this.client.defaults.headers.common[
+      "Authorization"
+    ] = `Bearer ${data.access_token}`;
   }
 
   private async ensureAuthenticated(): Promise<void> {
@@ -1001,7 +1002,9 @@ export async function ideaGeneratorAgent(
     generate innovative product ideas.
     
     Pain Points:
-    ${painPoints.map((p) => `- ${p.description} (severity: ${p.severity})`).join("\n")}
+    ${painPoints
+      .map((p) => `- ${p.description} (severity: ${p.severity})`)
+      .join("\n")}
     
     For each pain point, generate a product idea with:
     1. A catchy product name

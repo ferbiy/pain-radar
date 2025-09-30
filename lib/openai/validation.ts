@@ -78,6 +78,7 @@ export function validateProductIdea(idea: {
   const genericNames = ["general solution", "product", "app", "platform"];
 
   const nameLower = idea.name.toLowerCase().trim();
+
   if (genericNames.some((name) => nameLower === name)) {
     errors.push(`Generic product name: ${idea.name}`);
   }

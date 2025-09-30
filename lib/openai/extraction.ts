@@ -410,7 +410,13 @@ export function extractSinglePostIdea(
 
         return {
           name: competitionTool.args.productName,
-          pitch: `${competitionTool.args.productName} helps ${targetAudience} overcome ${painPoint.description.toLowerCase()}. ${marketSizeResult?.reasoning || competitionResult?.reasoning || "Built for teams facing this challenge."}`,
+          pitch: `${
+            competitionTool.args.productName
+          } helps ${targetAudience} overcome ${painPoint.description.toLowerCase()}. ${
+            marketSizeResult?.reasoning ||
+            competitionResult?.reasoning ||
+            "Built for teams facing this challenge."
+          }`,
           painPoint: painPoint.description,
           targetAudience,
           category: competitionTool.args.category || productCategory,
@@ -426,7 +432,9 @@ export function extractSinglePostIdea(
 
   const categoryCapitalized =
     productCategory.charAt(0).toUpperCase() + productCategory.slice(1);
-  const genericName = `${categoryCapitalized} Solution for ${targetAudience.split(",")[0].trim()}`;
+  const genericName = `${categoryCapitalized} Solution for ${targetAudience
+    .split(",")[0]
+    .trim()}`;
 
   return {
     name: genericName,
@@ -617,13 +625,19 @@ export function extractSinglePostScore(
   const reasoningParts: string[] = [];
 
   reasoningParts.push(
-    `Pain severity is ${context.painPoint.severity} (${painSeverity.toFixed(1)}/30)`
+    `Pain severity is ${context.painPoint.severity} (${painSeverity.toFixed(
+      1
+    )}/30)`
   );
   reasoningParts.push(
-    `Market size estimated at ${marketSize > 18 ? "large" : marketSize > 12 ? "medium" : "small"} (${marketSize.toFixed(1)}/25)`
+    `Market size estimated at ${
+      marketSize > 18 ? "large" : marketSize > 12 ? "medium" : "small"
+    } (${marketSize.toFixed(1)}/25)`
   );
   reasoningParts.push(
-    `Competition is ${competition > 14 ? "low" : competition > 10 ? "moderate" : "high"} (${competition.toFixed(1)}/20)`
+    `Competition is ${
+      competition > 14 ? "low" : competition > 10 ? "moderate" : "high"
+    } (${competition.toFixed(1)}/20)`
   );
 
   const reasoning = reasoningParts.join(". ") + ".";

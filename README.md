@@ -81,6 +81,7 @@ REDDIT_USER_AGENT=your_user_agent
    ```
 
 3. **Set up environment variables**
+
    - Copy `.env.example` to `.env.local` (if provided)
    - Fill in all required environment variables
 
@@ -107,6 +108,7 @@ Since Vercel's free tier only triggers cron jobs every 5 minutes, we recommend u
 1. **Sign up at [cron-job.org](https://console.cron-job.org/)** (free)
 
 2. **Create a new cron job** with the following settings:
+
    - **URL**: `https://your-app.vercel.app/api/queue/process`
    - **Schedule**: `* * * * *` (every minute)
    - **HTTP Method**: `POST`
@@ -137,10 +139,12 @@ The endpoint is already configured with security headers and requires the `CRON_
 All cron endpoints require the `x-cron-secret` header for authentication:
 
 1. **`POST /api/queue/process`** - Processes jobs in the queue (recommended for production)
+
    - Handles both coordinator and post_processor jobs
    - Implements proper job queuing and error handling
 
 2. **`POST /api/cron/generate`** - Generates ideas from Reddit (legacy, for direct generation)
+
    - Fetches Reddit posts and generates ideas in a single request
 
 3. **`POST /api/cron/email`** - Sends email digests to subscribers

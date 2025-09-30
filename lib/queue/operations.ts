@@ -35,7 +35,9 @@ export async function enqueueCoordinatorJob(userId?: string): Promise<string> {
   await redis.lpush(QUEUE_KEYS.queue, jobId);
 
   console.log(
-    `[Queue] Enqueued coordinator job ${jobId}${userId ? ` for user ${userId}` : ""}`
+    `[Queue] Enqueued coordinator job ${jobId}${
+      userId ? ` for user ${userId}` : ""
+    }`
   );
 
   return jobId;
@@ -112,7 +114,9 @@ export async function dequeueJob(): Promise<string | null> {
 
       if (processingTime > TIMEOUT) {
         console.warn(
-          `[Queue] Job ${processing} timed out after ${Math.round(processingTime / 1000)}s, marking as failed`
+          `[Queue] Job ${processing} timed out after ${Math.round(
+            processingTime / 1000
+          )}s, marking as failed`
         );
         await failJob(
           processing as string,
@@ -121,7 +125,9 @@ export async function dequeueJob(): Promise<string | null> {
         // Continue to dequeue next job
       } else {
         console.log(
-          `[Queue] Job ${processing} still processing (${Math.round(processingTime / 1000)}s elapsed)`
+          `[Queue] Job ${processing} still processing (${Math.round(
+            processingTime / 1000
+          )}s elapsed)`
         );
 
         return null;

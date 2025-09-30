@@ -335,10 +335,12 @@ interface IdeaGenerationPrompt {
 ## Security Considerations
 
 1. **Authentication**
+
    - Supabase Auth with secure sessions
    - Email verification (optional for POC)
 
 2. **Data Protection**
+
    - No RLS for POC (simplified development)
    - Simple in-memory rate limiting (optional)
    - Basic input sanitization
@@ -350,6 +352,7 @@ interface IdeaGenerationPrompt {
 ## Deployment Strategy
 
 1. **Vercel** (Primary)
+
    - Automatic deployments from GitHub
    - Environment variable management
    - Cron job support
@@ -362,12 +365,14 @@ interface IdeaGenerationPrompt {
 ## Future Enhancements (Post-MVP)
 
 1. **Advanced Features**
+
    - AI-powered trend analysis
    - Competitor analysis
    - Market size estimation
    - Team collaboration
 
 2. **Integrations**
+
    - Discord communities
    - Twitter/X discussions
    - Hacker News threads

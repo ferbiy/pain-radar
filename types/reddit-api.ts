@@ -169,7 +169,7 @@ export interface RedditPostData {
 // Reddit Comments Response
 export type RedditCommentsResponse = [
   RedditListingResponse,
-  RedditCommentsListing,
+  RedditCommentsListing
 ];
 
 export interface RedditCommentsListing {

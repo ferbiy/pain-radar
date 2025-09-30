@@ -88,7 +88,9 @@ async function painExtractorNode(
         let context = `Post ${idx + 1}:
 Subreddit: r/${post.subreddit}
 Title: ${post.title}
-Content: ${post.content?.substring(0, 400) || "[No content]"}${post.content && post.content.length > 400 ? "..." : ""}
+Content: ${post.content?.substring(0, 400) || "[No content]"}${
+          post.content && post.content.length > 400 ? "..." : ""
+        }
 Engagement: ${post.score} upvotes, ${post.numComments} comments
 URL: ${post.url}`;
 
@@ -98,7 +100,11 @@ URL: ${post.url}`;
             .slice(0, 5) // Top 5 comments
             .map(
               (comment, commentIdx) =>
-                `  Comment ${commentIdx + 1} (${comment.score} upvotes): ${comment.body.substring(0, 200)}${comment.body.length > 200 ? "..." : ""}`
+                `  Comment ${commentIdx + 1} (${
+                  comment.score
+                } upvotes): ${comment.body.substring(0, 200)}${
+                  comment.body.length > 200 ? "..." : ""
+                }`
             )
             .join("\n");
 
@@ -112,7 +118,9 @@ URL: ${post.url}`;
       .join("\n\n");
 
     console.log(
-      `[Pain Extractor] Analyzing ${state.redditPosts.slice(0, 10).length} posts...`
+      `[Pain Extractor] Analyzing ${
+        state.redditPosts.slice(0, 10).length
+      } posts...`
     );
 
     // Invoke agent - it will reason and use tools as needed
@@ -122,24 +130,36 @@ URL: ${post.url}`;
       {
         messages: [
           new HumanMessage(
-            `Analyze these ${state.redditPosts.length} Reddit posts to extract pain points.
+            `Analyze these ${
+              state.redditPosts.length
+            } Reddit posts to extract pain points.
 
-CRITICAL: You MUST call the analyze_pain_severity tool exactly ${state.redditPosts.length} times (once per post).
-DO NOT provide final JSON until you've called the tool ${state.redditPosts.length} times.
+CRITICAL: You MUST call the analyze_pain_severity tool exactly ${
+              state.redditPosts.length
+            } times (once per post).
+DO NOT provide final JSON until you've called the tool ${
+              state.redditPosts.length
+            } times.
 
 YOUR TASK HAS 2 PHASES:
 
 PHASE 1 - Research (use tools) - REQUIRED:
-Call analyze_pain_severity tool ${state.redditPosts.length} times, once for each post below.
+Call analyze_pain_severity tool ${
+              state.redditPosts.length
+            } times, once for each post below.
 
 PHASE 2 - Synthesis (provide final JSON) - ONLY AFTER PHASE 1:
-After calling the tool ${state.redditPosts.length} times, return your final analysis as structured JSON.
+After calling the tool ${
+              state.redditPosts.length
+            } times, return your final analysis as structured JSON.
 
 Here are the ${state.redditPosts.length} posts you MUST analyze:
 ${postsContext}
 
 PHASE 1 CHECKLIST (DO ALL OF THESE):
-${state.redditPosts.map((_, idx) => `☐ Post ${idx + 1}: Call analyze_pain_severity`).join("\n")}
+${state.redditPosts
+  .map((_, idx) => `☐ Post ${idx + 1}: Call analyze_pain_severity`)
+  .join("\n")}
 
 For each post, call analyze_pain_severity with:
 - painDescription: The UNDERLYING PROBLEM people face (not just the post title)
@@ -157,8 +177,12 @@ Post: "How are small startups finding good product designers?"
 ❌ Bad painDescription: "How are small startups finding good product designers?"
 ✅ Good painDescription: "Small startups (8-person SaaS) spend 3+ months failing to hire quality product designers after posting on job boards (Indeed, LinkedIn, AngelList), receiving zero or only low-quality spam applications"
 
-PHASE 2 INSTRUCTIONS (ONLY after analyzing ALL ${state.redditPosts.length} posts):
-After calling analyze_pain_severity ${state.redditPosts.length} times, return this JSON:
+PHASE 2 INSTRUCTIONS (ONLY after analyzing ALL ${
+              state.redditPosts.length
+            } posts):
+After calling analyze_pain_severity ${
+              state.redditPosts.length
+            } times, return this JSON:
 
 {
   "painPoints": [
@@ -317,7 +341,11 @@ EXECUTION ORDER:
               state.redditPosts[toolCallCounter] || state.redditPosts[0];
 
             console.log(
-              `[Pain Extractor] Processing tool call ${toolCallCounter + 1} from AI message ${msgIndex + 1}, tool ${toolCallIndex + 1}: "${toolArgs.painDescription?.substring(0, 60)}..."`
+              `[Pain Extractor] Processing tool call ${
+                toolCallCounter + 1
+              } from AI message ${msgIndex + 1}, tool ${
+                toolCallIndex + 1
+              }: "${toolArgs.painDescription?.substring(0, 60)}..."`
             );
 
             if (
@@ -328,8 +356,8 @@ EXECUTION ORDER:
                 toolResult.severityScore > 60
                   ? "high"
                   : toolResult.severityScore > 30
-                    ? "medium"
-                    : "low";
+                  ? "medium"
+                  : "low";
 
               // Infer category (temporary workaround - see category-inference.ts)
               const category = inferCategoryFromDescription(
@@ -350,14 +378,21 @@ EXECUTION ORDER:
               });
 
               console.log(
-                `[Pain Extractor] ✅ Extracted pain point ${toolCallCounter + 1}: "${toolArgs.painDescription.substring(0, 60)}..." (category: ${category}, severity: ${severity})`
+                `[Pain Extractor] ✅ Extracted pain point ${
+                  toolCallCounter + 1
+                }: "${toolArgs.painDescription.substring(
+                  0,
+                  60
+                )}..." (category: ${category}, severity: ${severity})`
               );
             }
 
             toolCallCounter++; // Move to next tool result
           } catch (error) {
             console.warn(
-              `[Pain Extractor] Could not parse tool call ${toolCallCounter + 1}:`,
+              `[Pain Extractor] Could not parse tool call ${
+                toolCallCounter + 1
+              }:`,
               error
             );
             toolCallCounter++; // Still increment to stay in sync
@@ -414,7 +449,9 @@ EXECUTION ORDER:
     return {
       currentStep: "generating",
       errors: [
-        `Pain extraction failed: ${error instanceof Error ? error.message : "Unknown error"}`,
+        `Pain extraction failed: ${
+          error instanceof Error ? error.message : "Unknown error"
+        }`,
       ],
       painPoints: [], // Continue with empty array
     };
@@ -570,7 +607,10 @@ Now:
 
       // Fallback: Generate template ideas from pain points
       ideas = state.painPoints.map((painPoint) => {
-        const ideaName = `${painPoint.category.charAt(0).toUpperCase() + painPoint.category.slice(1)} Solution`;
+        const ideaName = `${
+          painPoint.category.charAt(0).toUpperCase() +
+          painPoint.category.slice(1)
+        } Solution`;
 
         return {
           id: nanoid(),
@@ -635,7 +675,9 @@ Now:
     return {
       currentStep: "scoring",
       errors: [
-        `Idea generation failed: ${error instanceof Error ? error.message : "Unknown error"}`,
+        `Idea generation failed: ${
+          error instanceof Error ? error.message : "Unknown error"
+        }`,
       ],
       ideas: [],
     };
@@ -725,7 +767,11 @@ Context - Pain Points:
 ${painPointsContext}
 
 Context - Engagement Data:
-${sourceEngagement.map((e) => `- Idea ${e.ideaId}: ${e.upvotes} upvotes, ${e.comments} comments`).join("\n")}
+${sourceEngagement
+  .map(
+    (e) => `- Idea ${e.ideaId}: ${e.upvotes} upvotes, ${e.comments} comments`
+  )
+  .join("\n")}
 
 YOUR TASK HAS 2 PHASES:
 
@@ -831,8 +877,8 @@ Now:
           state.painPoints[index]?.severity === "high"
             ? 25
             : state.painPoints[index]?.severity === "medium"
-              ? 15
-              : 10;
+            ? 15
+            : 10;
         const marketSize = 20; // Default market size score
         const competition = 15; // Default competition score
         const feasibility = 10; // Default feasibility score
@@ -875,7 +921,9 @@ Now:
 
         if (!validation.isValid) {
           console.error(
-            `[Scorer] Invalid score breakdown for idea ${index + 1} "${idea.name}":`,
+            `[Scorer] Invalid score breakdown for idea ${index + 1} "${
+              idea.name
+            }":`,
             validation.errors
           );
           // Keep the idea but log the errors
@@ -883,7 +931,9 @@ Now:
         } else {
           if (validation.warnings.length > 0) {
             console.warn(
-              `[Scorer] Score breakdown warnings for idea ${index + 1} "${idea.name}":`,
+              `[Scorer] Score breakdown warnings for idea ${index + 1} "${
+                idea.name
+              }":`,
               validation.warnings
             );
           }
@@ -903,7 +953,12 @@ Now:
     validatedScoredIdeas.sort((a, b) => b.score - a.score);
 
     console.log(
-      `[Scorer] Successfully scored ${validatedScoredIdeas.length} ideas (avg: ${(validatedScoredIdeas.reduce((sum, i) => sum + i.score, 0) / validatedScoredIdeas.length).toFixed(1)}, source: ${extractionSource})`
+      `[Scorer] Successfully scored ${
+        validatedScoredIdeas.length
+      } ideas (avg: ${(
+        validatedScoredIdeas.reduce((sum, i) => sum + i.score, 0) /
+        validatedScoredIdeas.length
+      ).toFixed(1)}, source: ${extractionSource})`
     );
 
     return {
@@ -917,7 +972,9 @@ Now:
     return {
       currentStep: "complete",
       errors: [
-        `Scoring failed: ${error instanceof Error ? error.message : "Unknown error"}`,
+        `Scoring failed: ${
+          error instanceof Error ? error.message : "Unknown error"
+        }`,
       ],
       processingStats: createProcessingStats(state, state.ideas),
     };
@@ -1023,7 +1080,9 @@ export async function runIdeaGenerationWorkflow(
 
     console.log(`[Workflow] Workflow completed`);
     console.log(
-      `[Workflow] Generated ${result.ideas?.length || 0} ideas in ${processingTimeMs}ms`
+      `[Workflow] Generated ${
+        result.ideas?.length || 0
+      } ideas in ${processingTimeMs}ms`
     );
     console.log(
       `[Workflow] Thread ID ${threadId} saved in checkpoint for resume`
@@ -1118,7 +1177,10 @@ export async function runSinglePostWorkflow(
   const startTime = Date.now();
 
   console.log(
-    `[Single Post Workflow] Processing post: ${post.id} (${post.title.substring(0, 50)}...)`
+    `[Single Post Workflow] Processing post: ${post.id} (${post.title.substring(
+      0,
+      50
+    )}...)`
   );
 
   try {
@@ -1128,7 +1190,11 @@ export async function runSinglePostWorkflow(
       {
         messages: [
           new HumanMessage(
-            `Analyze this Reddit post and extract the pain point:\n\nTitle: ${post.title}\n\nContent: ${post.content}\n\nSubreddit: ${post.subreddit}\n\nComments (for context):\n${
+            `Analyze this Reddit post and extract the pain point:\n\nTitle: ${
+              post.title
+            }\n\nContent: ${post.content}\n\nSubreddit: ${
+              post.subreddit
+            }\n\nComments (for context):\n${
               post.comments
                 ?.slice(0, 5)
                 .map((c) => `- ${c.body}`)
@@ -1151,7 +1217,10 @@ export async function runSinglePostWorkflow(
     );
 
     console.log(
-      `[Single Post Workflow] Pain point extracted: ${painPointData.description.substring(0, 60)}...`
+      `[Single Post Workflow] Pain point extracted: ${painPointData.description.substring(
+        0,
+        60
+      )}...`
     );
 
     // Build pain point with all required fields
@@ -1173,7 +1242,9 @@ export async function runSinglePostWorkflow(
 
     if (!validation.isValid) {
       console.warn(
-        `[Single Post Workflow] Invalid pain point: ${validation.errors.join(", ")}`
+        `[Single Post Workflow] Invalid pain point: ${validation.errors.join(
+          ", "
+        )}`
       );
 
       return {
@@ -1185,7 +1256,10 @@ export async function runSinglePostWorkflow(
     }
 
     console.log(
-      `[Single Post Workflow] Pain point: ${painPoint.description.substring(0, 80)}...`
+      `[Single Post Workflow] Pain point: ${painPoint.description.substring(
+        0,
+        80
+      )}...`
     );
 
     // Step 2: Generate idea from pain point
@@ -1194,7 +1268,11 @@ export async function runSinglePostWorkflow(
       {
         messages: [
           new HumanMessage(
-            `Based on this pain point, generate a product idea:\n\nPain Point: ${painPoint.description}\n\nCategory: ${painPoint.category}\n\nEvidence: ${painPoint.examples?.join(", ") || "See Reddit post"}`
+            `Based on this pain point, generate a product idea:\n\nPain Point: ${
+              painPoint.description
+            }\n\nCategory: ${painPoint.category}\n\nEvidence: ${
+              painPoint.examples?.join(", ") || "See Reddit post"
+            }`
           ),
         ],
       },
@@ -1214,7 +1292,9 @@ export async function runSinglePostWorkflow(
 
     if (!ideaValidation.isValid) {
       console.warn(
-        `[Single Post Workflow] Invalid idea: ${ideaValidation.errors.join(", ")}`
+        `[Single Post Workflow] Invalid idea: ${ideaValidation.errors.join(
+          ", "
+        )}`
       );
 
       return {
@@ -1271,7 +1351,9 @@ export async function runSinglePostWorkflow(
 
     if (!scoreValidation.isValid) {
       console.warn(
-        `[Single Post Workflow] Invalid score: ${scoreValidation.errors.join(", ")}`
+        `[Single Post Workflow] Invalid score: ${scoreValidation.errors.join(
+          ", "
+        )}`
       );
     }
 

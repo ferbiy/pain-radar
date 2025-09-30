@@ -207,8 +207,9 @@ export class RedditAPIClient {
 
       this.accessToken = data.access_token;
       this.tokenExpiry = Date.now() + data.expires_in * 1000 - 60000; // 1 min buffer
-      this.client.defaults.headers.common["Authorization"] =
-        `Bearer ${data.access_token}`;
+      this.client.defaults.headers.common[
+        "Authorization"
+      ] = `Bearer ${data.access_token}`;
 
       console.log("[Reddit API] Successfully authenticated");
     } catch (error) {
@@ -277,7 +278,9 @@ export class RedditAPIClient {
     } catch (error) {
       console.error(`Failed to fetch posts from r/${subreddit}:`, error);
       throw new Error(
-        `Reddit API error: ${error instanceof Error ? error.message : "Unknown error"}`
+        `Reddit API error: ${
+          error instanceof Error ? error.message : "Unknown error"
+        }`
       );
     }
   }
@@ -340,7 +343,9 @@ export class RedditAPIClient {
     } catch (error) {
       console.error(`Failed to fetch comments for post ${postId}:`, error);
       throw new Error(
-        `Reddit API error: ${error instanceof Error ? error.message : "Unknown error"}`
+        `Reddit API error: ${
+          error instanceof Error ? error.message : "Unknown error"
+        }`
       );
     }
   }

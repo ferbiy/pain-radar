@@ -118,6 +118,7 @@ The agent IS using tools and generating reasoning, but we're ignoring it. For ex
    - Tools return rich data (severityScore, breakdown, reasoning)
    - We extract `severityScore` but ignore `reasoning` and `breakdown`
 2. **Agent's Final Reasoning Is Lost**
+
    - The agent processes all tool results and generates a synthesis
    - We only look at individual tool messages, not the agent's final analysis
 
@@ -174,11 +175,13 @@ The agents ARE working correctly and generating insights, but we're only reading
 ### 🎯 **What We Need (For Next Phase):**
 
 1. **Hybrid Approach:**
+
    - Keep tool calling ✅
    - Extract tool data (scores, metrics) ✅
    - **ADD:** Parse agent's final message for creative/analytical content ⚠️
 
 2. **Better Prompting:**
+
    - Current prompts force tool usage ✅
    - Need prompts that also force structured final output ⚠️
 
