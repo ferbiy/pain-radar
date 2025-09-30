@@ -3,7 +3,7 @@
 ### ✅ **What's Working Perfectly:**
 
 1. **LangGraph Workflow Execution** - All agents ran successfully in sequence
-2. **Agent Tool Calling** - The agents ARE using tools now! 
+2. **Agent Tool Calling** - The agents ARE using tools now!
    - Pain Extractor: 3 tool calls to `analyze_pain_severity`
    - Idea Generator: 6+ tool calls to `estimate_market_size` and `analyze_competition`
    - Scorer: 9 tool calls across all 3 tools
@@ -18,6 +18,7 @@
 #### **Issue 1: Pain Points Are NOT Actually Pain Points**
 
 **What we're getting:**
+
 ```json
 {
   "description": "Share your startup - quarterly post",
@@ -27,11 +28,13 @@
 ```
 
 **What these ACTUALLY are:**
+
 - Reddit post **TITLES**, not extracted pain points!
 
 **What they SHOULD be:**
+
 - Post 1: "Founders lack regular, high-visibility channels to promote their startups to relevant audiences"
-- Post 2: "Startups and job seekers struggle to connect due to fragmented hiring/co-founder discovery"  
+- Post 2: "Startups and job seekers struggle to connect due to fragmented hiring/co-founder discovery"
 - Post 3: "Small startups (8 people) spend 3+ months failing to hire quality product designers through traditional channels"
 
 **Root Cause:** The current code uses `post.title` directly instead of analyzing the agent's reasoning about what the pain point actually is.
@@ -41,6 +44,7 @@
 #### **Issue 2: Ideas Are Completely Generic**
 
 **Current output:**
+
 ```json
 {
   "name": "General Solution",
@@ -49,12 +53,14 @@
 ```
 
 **Problems:**
+
 - ❌ Every idea is named "General Solution" (no creativity)
 - ❌ Pitches are just templates: "A solution to address: [pain point]"
 - ❌ No actual product concept or differentiation
 - ❌ Target audience is always "Startups and small businesses" (too broad)
 
 **What we SHOULD be getting:**
+
 ```json
 {
   "name": "LaunchPad Weekly",
@@ -68,6 +74,7 @@
 #### **Issue 3: All Categories Are "general"**
 
 Looking at the Reddit posts:
+
 - Post 1 (Share Your Startup) → Should be: **marketing**
 - Post 2 (Jobs/Co-Founders Thread) → Should be: **hiring**
 - Post 3 (Finding Product Designers) → Should be: **hiring**
@@ -81,6 +88,7 @@ Looking at the Reddit posts:
 #### **Issue 4: Scoring Logic Is Hardcoded**
 
 **Current reasoning:**
+
 ```json
 {
   "reasoning": "Scored based on medium severity pain point with 67 engagement"
@@ -88,6 +96,7 @@ Looking at the Reddit posts:
 ```
 
 **What's happening:**
+
 - Pain severity: `state.painPoints[index]?.severity === "high" ? 25 : 15` (hardcoded)
 - Market size: Always `20` (hardcoded)
 - Competition: Always `15` (hardcoded)
@@ -96,6 +105,7 @@ Looking at the Reddit posts:
 
 **What we SHOULD be getting:**
 The agent IS using tools and generating reasoning, but we're ignoring it. For example:
+
 - The `estimate_market_size` tool returns TAM, SAM, growth potential
 - The `analyze_competition` tool returns competitive landscape analysis
 - But we're using default values instead of these results
@@ -107,7 +117,6 @@ The agent IS using tools and generating reasoning, but we're ignoring it. For ex
 1. **Tool Results Exist But Aren't Fully Utilized**
    - Tools return rich data (severityScore, breakdown, reasoning)
    - We extract `severityScore` but ignore `reasoning` and `breakdown`
-   
 2. **Agent's Final Reasoning Is Lost**
    - The agent processes all tool results and generates a synthesis
    - We only look at individual tool messages, not the agent's final analysis
@@ -121,20 +130,25 @@ The agent IS using tools and generating reasoning, but we're ignoring it. For ex
 ### 📊 **Data Flow Analysis:**
 
 **Current Flow:**
+
 ```
 Reddit Post → Agent calls tools → Tool returns data → We extract tool data → Use post.title as pain point
 ```
 
 **The Missing Step:**
+
 ```
 → Agent SYNTHESIZES tool results → Agent generates creative analysis → We ignore this part ❌
 ```
 
 **Evidence from logs:**
+
 ```
 [Idea Generator] Agent returned 13 messages
 ```
+
 13 messages means the agent had a conversation:
+
 - human message (input)
 - ai message (tool call 1)
 - tool message (result 1)
@@ -148,6 +162,7 @@ Reddit Post → Agent calls tools → Tool returns data → We extract tool data
 ### 💡 **Why This Happened:**
 
 When I implemented "Option A: Extract from Tool Results", I took a pragmatic shortcut:
+
 1. ✅ Fixed the immediate problem (agent wasn't using tools)
 2. ✅ Extracted structured data from tools
 3. ❌ But bypassed the agent's creative/analytical output
@@ -176,14 +191,14 @@ The agents ARE working correctly and generating insights, but we're only reading
 
 ### 📈 **Success Metrics:**
 
-| Metric | Current | Target |
-|--------|---------|--------|
-| Tools Called | ✅ Working | ✅ Keep |
-| Tool Results Extracted | ✅ Working | ✅ Keep |
-| Real Pain Points | ❌ Using titles | 🎯 Agent analysis |
-| Creative Ideas | ❌ Generic | 🎯 Agent creativity |
-| Categories | ❌ All "general" | 🎯 Proper classification |
-| Scoring Reasoning | ❌ Hardcoded | 🎯 Agent reasoning |
+| Metric                 | Current          | Target                   |
+| ---------------------- | ---------------- | ------------------------ |
+| Tools Called           | ✅ Working       | ✅ Keep                  |
+| Tool Results Extracted | ✅ Working       | ✅ Keep                  |
+| Real Pain Points       | ❌ Using titles  | 🎯 Agent analysis        |
+| Creative Ideas         | ❌ Generic       | 🎯 Agent creativity      |
+| Categories             | ❌ All "general" | 🎯 Proper classification |
+| Scoring Reasoning      | ❌ Hardcoded     | 🎯 Agent reasoning       |
 
 ---
 

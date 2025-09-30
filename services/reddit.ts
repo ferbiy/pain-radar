@@ -104,6 +104,7 @@ export class RedditService {
 
         if (isMetaThread) {
           console.log(`[Reddit Service] Skipping META thread: "${post.title}"`);
+
           return false;
         }
 
@@ -129,12 +130,14 @@ export class RedditService {
 
             try {
               const comments = await this.fetchPostComments(post.id, 10); // Top 10 comments
+
               return { ...post, comments };
             } catch (error) {
               console.warn(
                 `[Reddit Service] Failed to fetch comments for post ${post.id}:`,
                 error
               );
+
               return post; // Return post without comments on error
             }
           }

@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { AuthStatus } from "@/components/auth/auth-status";
+import { ImageDivider } from "@/components/marketing/image-divider";
 
 export default function Home() {
   return (
@@ -28,12 +28,11 @@ export default function Home() {
               <Link href="/login">Sign In</Link>
             </Button>
           </div>
-
-          <div className="pt-8">
-            <AuthStatus showFullStatus />
-          </div>
         </div>
       </section>
+
+      {/* Image Divider 1 */}
+      <ImageDivider index={0} />
 
       {/* Features Section */}
       <section className="py-16 bg-muted/50">
@@ -81,6 +80,9 @@ export default function Home() {
           </div>
         </div>
       </section>
+
+      {/* Image Divider 2 */}
+      <ImageDivider index={1} />
 
       {/* Footer */}
       <footer className="border-t py-8">

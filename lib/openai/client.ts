@@ -13,9 +13,7 @@ import { env } from "@/config/env";
  * Create base ChatOpenAI instance
  * Used internally by agents in lib/openai/agents.ts
  */
-export const createChatOpenAI = (config?: {
-  maxTokens?: number;
-}) => {
+export const createChatOpenAI = (config?: { maxTokens?: number }) => {
   return new ChatOpenAI({
     model: env.openai.model,
     apiKey: env.openai.apiKey,
