@@ -2027,19 +2027,24 @@ After:  125645ms (2.1 minutes) complete success
 
 ---
 
-## Epic 7: Email Subscription System
+## Epic 7: Email Subscription System (DONE)
 
-### Task 7.1: Create Subscription UI
+### Task 7.1: Create Subscription UI (DONE)
 
-- Build subscription form
-- Add topic selection checkboxes
-- Create success/error states
+✅ **Completed:**
 
-### Task 7.2: Implement Subscription API
+- Built subscription form component
+- Added topic selection with badges (Marketing, Hiring, Technical, Productivity, Financial)
+- Created success/error states with messages
 
-- Create subscription endpoint
-- Generate unsubscribe tokens
-- Store preferences in database
+### Task 7.2: Implement Subscription API (DONE)
+
+✅ **Completed:**
+
+- Created POST `/api/subscriptions` endpoint
+- Generates unique unsubscribe tokens (32-char nanoid)
+- Stores preferences in Supabase
+- Implements DELETE endpoint for unsubscribe
 
 ```typescript
 // pseudocode - app/api/subscriptions/route.ts
@@ -2056,23 +2061,30 @@ export async function POST(request: Request) {
 }
 ```
 
-### Task 7.3: Build Email Templates
+### Task 7.3: Build Email Templates (DONE)
 
-- Create React Email template
-- Design responsive layout
-- Add unsubscribe link
+✅ **Completed:**
 
-### Task 7.4: Set Up Resend Integration
+- Created React Email template (`emails/ideas-digest.tsx`)
+- Designed responsive layout with cards
+- Added unsubscribe link with token
 
-- Configure Resend client
-- Create email sending service
-- Handle delivery errors
+### Task 7.4: Set Up Resend Integration (DONE)
 
-### Task 7.5: Implement Email Dispatch Logic
+✅ **Completed:**
 
-- Query active subscriptions
-- Filter ideas by user preferences
-- Batch send emails
+- Configured Resend client (`lib/email/resend.ts`)
+- Created `sendIdeasDigest()` service function
+- Handles errors with proper logging
+
+### Task 7.5: Implement Email Dispatch Logic (DONE)
+
+✅ **Completed:**
+
+- Queries active subscriptions from Supabase
+- Filters ideas by user topic preferences
+- Batch sends emails with Promise.allSettled
+- Updates `last_email_sent` timestamp
 
 ---
 
@@ -2118,9 +2130,16 @@ export async function POST(request: Request) {
 }
 ```
 
-### Task 8.3: Implement Email Job (SKIPPED)
+### Task 8.3: Implement Email Job (DONE)
 
-⏭️ **Skipped:** Requires Epic 7 (Email Subscription System)
+✅ **Completed:**
+
+- Created POST `/api/cron/email` endpoint
+- Queries new ideas (is_new = true)
+- Gets active subscriptions
+- Filters ideas by user topics
+- Sends digest emails via Resend
+- Marks ideas as sent (is_new = false)
 
 ### Task 8.4: Add Manual Trigger (DONE)
 
