@@ -22,17 +22,17 @@ const navigation = {
   social: [
     {
       name: "Twitter",
-      href: "https://twitter.com/painradar",
+      href: "https://x.com/akoyrk",
       icon: Twitter,
     },
     {
       name: "GitHub",
-      href: "https://github.com/painradar",
+      href: "https://github.com/ferbiy/",
       icon: Github,
     },
     {
       name: "LinkedIn",
-      href: "https://linkedin.com/company/painradar",
+      href: "https://www.linkedin.com/in/kryoka/",
       icon: Linkedin,
     },
   ],

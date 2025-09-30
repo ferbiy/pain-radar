@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { Lightbulb, ArrowRight, Sparkles } from "lucide-react";
 
@@ -14,23 +15,36 @@ export function Hero() {
         </div>
       </div>
 
-      <div className="mx-auto max-w-4xl text-center">
+      <div className="mx-auto max-w-6xl">
         {/* Badge */}
-        <div className="mb-8 inline-flex items-center gap-2 rounded-full border bg-muted/50 px-4 py-1.5 text-sm backdrop-blur-sm">
-          <Sparkles className="h-4 w-4 text-primary" />
-          <span className="font-medium">AI-Powered Product Discovery</span>
+        <div className="mb-8 flex justify-center">
+          <div className="inline-flex items-center gap-2 rounded-full border bg-muted/50 px-4 py-1.5 text-sm backdrop-blur-sm">
+            <Sparkles className="h-4 w-4 text-primary" />
+            <span className="font-medium">AI-Powered Product Discovery</span>
+          </div>
         </div>
 
-        {/* Main heading */}
-        <h1 className="text-4xl font-bold tracking-tight sm:text-6xl lg:text-7xl">
-          Turn Reddit Pain Points Into{" "}
-          <span className="bg-gradient-to-r from-primary to-purple-600 bg-clip-text text-transparent">
-            Validated Product Ideas
-          </span>
-        </h1>
+        {/* Logo + Heading */}
+        <div className="flex flex-col sm:flex-row items-center justify-center gap-6 mb-6">
+          <Image
+            src="/logo.png"
+            alt="Pain Radar"
+            width={100}
+            height={100}
+            className="transition-transform hover:scale-110 shrink-0"
+            priority
+          />
+
+          <h1 className="text-4xl font-bold tracking-tight text-center sm:text-6xl lg:text-7xl">
+            Turn Reddit Pain Points Into{" "}
+            <span className="bg-gradient-to-r from-primary to-purple-600 bg-clip-text text-transparent">
+              Validated Product Ideas
+            </span>
+          </h1>
+        </div>
 
         {/* Subheading */}
-        <p className="mt-6 text-lg leading-8 text-muted-foreground sm:text-xl">
+        <p className="mt-6 text-lg leading-8 text-muted-foreground sm:text-xl text-center">
           Stop guessing what to build. Our AI analyzes thousands of Reddit posts
           to uncover real user problems, then generates actionable startup ideas
           ranked by market potential.
