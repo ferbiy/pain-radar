@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
 import { UserMenu } from "./user-menu";
+import { ThemeToggle } from "@/components/theme-toggle";
 import Image from "next/image";
 
 export function MainNav() {
@@ -42,6 +43,7 @@ export function MainNav() {
 
           {/* Auth Section */}
           <div className="flex items-center space-x-2 ml-2">
+            <ThemeToggle />
             {loading ? (
               <div className="h-8 w-8 animate-pulse rounded-full bg-muted" />
             ) : user ? (
