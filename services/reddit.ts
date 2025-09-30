@@ -111,7 +111,7 @@ export class RedditService {
         // Keep posts with meaningful content
         return (
           post.title.length > 10 && // Meaningful titles
-          (post.content.length > 50 || post.numComments > 5) // Either has content or engagement
+          (post.content.length > 20 || post.numComments > 3) // Lower threshold for content or engagement
         );
       });
 
