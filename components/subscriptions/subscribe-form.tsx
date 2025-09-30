@@ -1,10 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Bell } from "lucide-react";
+import { Bell, CheckCircle, Edit } from "lucide-react";
+import { toast } from "sonner";
 
 const TOPICS = [
   "Marketing",
@@ -14,11 +15,35 @@ const TOPICS = [
   "Financial",
 ];
 
+interface StoredSubscription {
+  email: string;
+  topics: string[];
+}
+
 export function SubscribeForm() {
   const [email, setEmail] = useState("");
   const [selectedTopics, setSelectedTopics] = useState<string[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [message, setMessage] = useState("");
+  const [existingSubscription, setExistingSubscription] =
+    useState<StoredSubscription | null>(null);
+  const [isEditing, setIsEditing] = useState(false);
+
+  // Check for existing subscription on mount
+  useEffect(() => {
+    const stored = localStorage.getItem("subscription");
+
+    if (stored) {
+      try {
+        const subscription = JSON.parse(stored) as StoredSubscription;
+
+        setExistingSubscription(subscription);
+        setEmail(subscription.email);
+        setSelectedTopics(subscription.topics);
+      } catch {
+        // Invalid data, ignore
+      }
+    }
+  }, []);
 
   const toggleTopic = (topic: string) => {
     setSelectedTopics((prev) =>
@@ -29,7 +54,6 @@ export function SubscribeForm() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
-    setMessage("");
 
     try {
       const response = await fetch("/api/subscriptions", {
@@ -41,24 +65,90 @@ export function SubscribeForm() {
       const data = await response.json();
 
       if (response.ok) {
-        setMessage("✅ Subscribed! Check your email for updates.");
-        setEmail("");
-        setSelectedTopics([]);
+        // Store subscription in localStorage
+        const subscription: StoredSubscription = {
+          email,
+          topics: selectedTopics,
+        };
+
+        localStorage.setItem("subscription", JSON.stringify(subscription));
+        setExistingSubscription(subscription);
+        setIsEditing(false);
+
+        toast.success("Subscribed successfully!", {
+          description: "You'll receive weekly product ideas in your inbox.",
+        });
       } else {
-        setMessage(`❌ ${data.error}`);
+        toast.error("Subscription failed", {
+          description: data.error || "Please try again.",
+        });
       }
-    } catch (error) {
-      setMessage("❌ Failed to subscribe. Please try again.");
+    } catch {
+      toast.error("Subscription failed", {
+        description: "Please check your connection and try again.",
+      });
     } finally {
       setIsSubmitting(false);
     }
   };
 
+  const handleEdit = () => {
+    setIsEditing(true);
+  };
+
+  const handleCancel = () => {
+    if (existingSubscription) {
+      setEmail(existingSubscription.email);
+      setSelectedTopics(existingSubscription.topics);
+    }
+    setIsEditing(false);
+  };
+
+  // Show existing subscription if subscribed and not editing
+  if (existingSubscription && !isEditing) {
+    return (
+      <div className="space-y-4">
+        <div className="flex items-center gap-2 text-green-600">
+          <CheckCircle className="h-5 w-5" />
+          <h3 className="text-lg font-semibold">Active Subscription</h3>
+        </div>
+
+        <div className="rounded-lg border bg-muted/50 p-4 space-y-3">
+          <div>
+            <p className="text-sm text-muted-foreground">Email</p>
+            <p className="font-medium">{existingSubscription.email}</p>
+          </div>
+
+          <div>
+            <p className="text-sm text-muted-foreground mb-2">
+              Subscribed Topics
+            </p>
+            <div className="flex flex-wrap gap-2">
+              {existingSubscription.topics.map((topic) => (
+                <Badge key={topic} variant="default">
+                  {topic}
+                </Badge>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        <Button onClick={handleEdit} variant="outline" className="w-full">
+          <Edit className="h-4 w-4 mr-2" />
+          Update Topics
+        </Button>
+      </div>
+    );
+  }
+
+  // Show subscription form
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       <div className="flex items-center gap-2">
         <Bell className="h-5 w-5 text-muted-foreground" />
-        <h3 className="text-lg font-semibold">Subscribe to Ideas</h3>
+        <h3 className="text-lg font-semibold">
+          {existingSubscription ? "Update Subscription" : "Subscribe to Ideas"}
+        </h3>
       </div>
 
       <Input
@@ -66,6 +156,7 @@ export function SubscribeForm() {
         placeholder="your@email.com"
         value={email}
         onChange={(e) => setEmail(e.target.value)}
+        disabled={!!existingSubscription}
         required
       />
 
@@ -85,14 +176,24 @@ export function SubscribeForm() {
         </div>
       </div>
 
-      <Button
-        type="submit"
-        disabled={isSubmitting || selectedTopics.length === 0}
-      >
-        {isSubmitting ? "Subscribing..." : "Subscribe"}
-      </Button>
-
-      {message && <p className="text-sm">{message}</p>}
+      <div className="flex gap-2">
+        <Button
+          type="submit"
+          disabled={isSubmitting || selectedTopics.length === 0}
+          className="flex-1"
+        >
+          {isSubmitting
+            ? "Saving..."
+            : existingSubscription
+              ? "Update"
+              : "Subscribe"}
+        </Button>
+        {existingSubscription && (
+          <Button type="button" onClick={handleCancel} variant="outline">
+            Cancel
+          </Button>
+        )}
+      </div>
     </form>
   );
 }
