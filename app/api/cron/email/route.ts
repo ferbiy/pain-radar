@@ -77,7 +77,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
         await sendIdeasDigest({
           to: sub.email,
           ideas: filteredIdeas.map((idea) => ({
-            name: idea.name,
+            name: idea.title,
             pitch: idea.pitch,
             score: idea.score,
             category: idea.category,

@@ -25,6 +25,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
         topics,
         unsubscribe_token: nanoid(32),
         is_active: true,
+        // user_id omitted for anonymous subscriptions (nullable in schema)
       })
       .select()
       .single();
@@ -46,6 +47,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     });
   } catch (error) {
     console.error("[Subscriptions] Error:", error);
+
     return NextResponse.json(
       { error: "Failed to create subscription" },
       { status: 500 }
@@ -78,6 +80,7 @@ export async function DELETE(request: NextRequest): Promise<NextResponse> {
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error("[Subscriptions] Unsubscribe error:", error);
+
     return NextResponse.json(
       { error: "Failed to unsubscribe" },
       { status: 500 }

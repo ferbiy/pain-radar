@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { runIdeaGenerationWorkflow } from "@/agents/workflow";
 import { RedditService } from "@/services/reddit";
 import { supabaseAdmin } from "@/lib/supabase/admin";
+import type { Json } from "@/types/supabase";
 
 /**
  * Cron endpoint to generate product ideas
@@ -52,15 +53,15 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
 
     // Store ideas in Supabase
     const ideasToStore = result.data.ideas.map((idea) => ({
-      name: idea.name,
+      title: idea.name,
       pitch: idea.pitch,
       pain_point: idea.painPoint,
       target_audience: idea.targetAudience,
       category: idea.category,
       score: idea.score,
       sources: idea.sources || [],
-      score_breakdown: idea.scoreBreakdown,
-      confidence: idea.confidence,
+      score_breakdown: (idea.scoreBreakdown as unknown as Json) || null,
+      confidence: idea.confidence || null,
       is_new: true,
     }));
 
@@ -71,6 +72,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
 
     if (error) {
       console.error("[Cron] Database error:", error);
+
       return NextResponse.json(
         { error: "Failed to store ideas", details: error.message },
         { status: 500 }
@@ -85,7 +87,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       processingTime: result.processingTimeMs,
       ideas: data.map((idea) => ({
         id: idea.id,
-        name: idea.name,
+        name: idea.title,
         score: idea.score,
       })),
     });
