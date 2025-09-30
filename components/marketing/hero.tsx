@@ -31,7 +31,7 @@ export function Hero() {
             alt="Pain Radar"
             width={100}
             height={100}
-            className="transition-transform hover:scale-110 shrink-0"
+            className="transition-transform hover:scale-110 shrink-0 dark:invert"
             priority
           />
 

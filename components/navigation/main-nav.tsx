@@ -16,7 +16,13 @@ export function MainNav() {
         {/* Logo */}
         <div className=" flex">
           <Link href="/" className="mr-6 flex items-center space-x-2">
-            <Image src="/logo.png" alt="Pain Radar" width={32} height={32} />
+            <Image
+              src="/logo.png"
+              alt="Pain Radar"
+              width={32}
+              height={32}
+              className="dark:invert"
+            />
           </Link>
         </div>
 
