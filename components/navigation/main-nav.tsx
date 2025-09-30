@@ -4,17 +4,18 @@ import Link from "next/link";
 import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
 import { UserMenu } from "./user-menu";
+import Image from "next/image";
 
 export function MainNav() {
   const { user, loading } = useAuth();
 
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-      <div className="container flex h-14 items-center">
+      <div className="mx-6 flex h-14 items-center">
         {/* Logo */}
-        <div className="mr-4 flex">
+        <div className=" flex">
           <Link href="/" className="mr-6 flex items-center space-x-2">
-            <span className="hidden font-bold sm:inline-block">Pain Radar</span>
+            <Image src="/logo.png" alt="Pain Radar" width={32} height={32} />
           </Link>
         </div>
 
@@ -40,7 +41,7 @@ export function MainNav() {
           </nav>
 
           {/* Auth Section */}
-          <div className="flex items-center space-x-2">
+          <div className="flex items-center space-x-2 ml-2">
             {loading ? (
               <div className="h-8 w-8 animate-pulse rounded-full bg-muted" />
             ) : user ? (
