@@ -75,7 +75,7 @@ export function UserMenu({ user }: UserMenuProps) {
           </a>
         </DropdownMenuItem>
         <DropdownMenuItem asChild>
-          <a href="/settings" className="flex items-center">
+          <a href="/dashboard/settings" className="flex items-center">
             <Settings className="mr-2 h-4 w-4" />
             <span>Settings</span>
           </a>

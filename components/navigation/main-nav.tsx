@@ -31,7 +31,7 @@ export function MainNav() {
                   Dashboard
                 </Link>
                 <Link
-                  href="/settings"
+                  href="/dashboard/settings"
                   className="text-sm font-medium transition-colors hover:text-primary"
                 >
                   Settings

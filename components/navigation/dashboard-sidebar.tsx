@@ -42,7 +42,7 @@ const sidebarNavItems: SidebarNavItem[] = [
   },
   {
     title: "Settings",
-    href: "/settings",
+    href: "/dashboard/settings",
     icon: Settings,
   },
 ];
