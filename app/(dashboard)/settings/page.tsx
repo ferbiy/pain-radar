@@ -2,7 +2,7 @@ import { AuthStatus } from "@/components/auth/auth-status";
 
 export default function SettingsPage() {
   return (
-    <div className="container mx-auto py-8">
+    <div className="mx-auto p-8">
       <div className="flex items-center justify-between mb-8">
         <div>
           <h1 className="text-3xl font-bold">Settings</h1>
