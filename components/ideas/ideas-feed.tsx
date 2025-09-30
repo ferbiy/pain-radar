@@ -27,14 +27,24 @@ export function IdeasFeed({ ideas, isLoading = false }: IdeasFeedProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("All");
   const [sortBy, setSortBy] = useState<"score" | "date">("score");
+  const [viewedIdeas, setViewedIdeas] = useState<Set<string>>(new Set());
 
-  // Restore filter preferences from localStorage on mount
+  // Restore filter preferences and viewed ideas from localStorage on mount
   useEffect(() => {
     const savedCategory = localStorage.getItem("ideas-filter-category");
     const savedSort = localStorage.getItem("ideas-filter-sort");
+    const savedViewed = localStorage.getItem("ideas-viewed");
 
     if (savedCategory) setSelectedCategory(savedCategory);
     if (savedSort) setSortBy(savedSort as "score" | "date");
+
+    if (savedViewed) {
+      try {
+        setViewedIdeas(new Set(JSON.parse(savedViewed)));
+      } catch {
+        // Invalid data, ignore
+      }
+    }
   }, []);
 
   // Persist filter preferences to localStorage
@@ -45,6 +55,18 @@ export function IdeasFeed({ ideas, isLoading = false }: IdeasFeedProps) {
   useEffect(() => {
     localStorage.setItem("ideas-filter-sort", sortBy);
   }, [sortBy]);
+
+  // Persist viewed ideas to localStorage
+  useEffect(() => {
+    if (viewedIdeas.size > 0) {
+      localStorage.setItem("ideas-viewed", JSON.stringify([...viewedIdeas]));
+    }
+  }, [viewedIdeas]);
+
+  // Mark an idea as viewed
+  const markAsViewed = (ideaId: string) => {
+    setViewedIdeas((prev) => new Set([...prev, ideaId]));
+  };
 
   // Filter ideas based on search and category (memoized for performance)
   const filteredIdeas = useMemo(() => {
@@ -174,18 +196,22 @@ export function IdeasFeed({ ideas, isLoading = false }: IdeasFeedProps) {
       {/* Ideas Grid */}
       {!isLoading && sortedIdeas.length > 0 && (
         <div className="grid gap-6 md:grid-cols-2">
-          {sortedIdeas.map((idea) => (
-            <IdeaCard
-              key={idea.id}
-              idea={idea}
-              isNew={
-                idea.generatedAt
-                  ? new Date(idea.generatedAt).getTime() >
-                    Date.now() - 24 * 60 * 60 * 1000
-                  : false
-              }
-            />
-          ))}
+          {sortedIdeas.map((idea) => {
+            // Check if idea is new (within 24 hours) AND not viewed yet
+            const isRecent = idea.generatedAt
+              ? new Date(idea.generatedAt).getTime() >
+                Date.now() - 24 * 60 * 60 * 1000
+              : false;
+            const isUnviewed = !viewedIdeas.has(idea.id);
+            const isNew = isRecent && isUnviewed;
+
+            // Mark as viewed when rendered
+            if (isUnviewed) {
+              markAsViewed(idea.id);
+            }
+
+            return <IdeaCard key={idea.id} idea={idea} isNew={isNew} />;
+          })}
         </div>
       )}
     </div>

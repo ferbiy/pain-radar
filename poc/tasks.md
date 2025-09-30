@@ -2016,11 +2016,14 @@ After:  125645ms (2.1 minutes) complete success
 - Preferences automatically restored on page load
 - Sort preferences (score/date) also persisted
 
-### Task 6.4: Implement "New" Badge Logic
+### Task 6.4: Implement "New" Badge Logic (DONE)
 
-- Track viewed ideas
-- Show new badge for recent ideas
-- Update view count on click
+✅ **Completed:**
+
+- Tracked viewed ideas in localStorage
+- "New" badge shows only for unviewed ideas (within 24 hours)
+- Ideas automatically marked as viewed when displayed
+- Viewed state persists across sessions
 
 ---
 
