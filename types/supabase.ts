@@ -87,7 +87,7 @@ export type Database = {
           is_new?: boolean
           pain_point?: string
           pitch?: string
-          score?: number
+          score: number
           score_breakdown?: Json | null
           sources?: Json | null
           target_audience?: string | null
