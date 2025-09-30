@@ -1,7 +1,6 @@
 import { ProtectedRoute } from "@/components/auth/protected-route";
 import { DashboardSidebar } from "@/components/navigation/dashboard-sidebar";
 import { MobileSidebar } from "@/components/navigation/mobile-sidebar";
-import { UserMenu } from "@/components/navigation/user-menu";
 
 export default function DashboardLayout({
   children,

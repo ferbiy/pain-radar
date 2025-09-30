@@ -19,7 +19,7 @@ import { loginSchema, type LoginFormData } from "@/lib/validations/auth";
 import { LoadingPage } from "@/components/ui/loading";
 
 interface LoginFormProps {
-  onSubmit: (data: LoginFormData) => Promise<{ error?: string } | void>;
+  onSubmit: (_data: LoginFormData) => Promise<{ error?: string } | void>;
 }
 
 function LoginFormContent({ onSubmit }: LoginFormProps) {

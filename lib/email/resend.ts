@@ -24,7 +24,7 @@ export async function sendIdeasDigest({
 }: SendDigestParams) {
   const unsubscribeUrl = `${process.env.NEXT_PUBLIC_APP_URL}/api/subscriptions?token=${unsubscribeToken}`;
 
-  const html = render(
+  const html = await render(
     IdeasDigestEmail({
       ideas,
       unsubscribeUrl,
@@ -32,7 +32,7 @@ export async function sendIdeasDigest({
   );
 
   const { data, error } = await resend.emails.send({
-    from: "Pain Radar <ideas@painradar.com>",
+    from: process.env.RESEND_FROM_EMAIL || "Pain Radar <ideas@painradar.com>",
     to,
     subject: `🎯 ${ideas.length} New Product Ideas from Reddit`,
     html,

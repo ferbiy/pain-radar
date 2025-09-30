@@ -17,7 +17,7 @@ import {
 import { signUpSchema, type SignUpFormData } from "@/lib/validations/auth";
 
 interface SignUpFormProps {
-  onSubmit: (data: SignUpFormData) => Promise<{ error?: string } | void>;
+  onSubmit: (_data: SignUpFormData) => Promise<{ error?: string } | void>;
 }
 
 export function SignUpForm({ onSubmit }: SignUpFormProps) {

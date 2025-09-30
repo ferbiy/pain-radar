@@ -13,7 +13,7 @@ import { CheckCircle2, Loader2 } from "lucide-react";
 
 interface GenerationProgressProps {
   isOpen: boolean;
-  onOpenChange: (open: boolean) => void;
+  onOpenChange: (_open: boolean) => void;
 }
 
 const STEPS = [

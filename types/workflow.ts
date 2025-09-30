@@ -121,7 +121,7 @@ export interface ProductIdeaLocal {
 
   // Scoring details (filled by scoring agent)
   score: number; // 0-100 total score
-  scoreBreakdown?: ScoreBreakdown;
+  scoreBreakdown?: ScoreBreakdownLocal;
 
   // Metadata
   generatedAt: Date;
@@ -131,7 +131,7 @@ export interface ProductIdeaLocal {
 /**
  * Detailed scoring breakdown for product ideas
  */
-export interface ScoreBreakdown {
+export interface ScoreBreakdownLocal {
   painSeverity: number; // 0-30 points
   marketSize: number; // 0-25 points
   competition: number; // 0-20 points (higher = less competition)
