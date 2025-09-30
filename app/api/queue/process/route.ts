@@ -12,12 +12,27 @@ import { supabaseAdmin } from "@/lib/supabase/admin";
 import type { Json } from "@/types/supabase";
 import type { RedditPost } from "@/types/reddit";
 
+// CORS headers for external cron services
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Methods": "POST, OPTIONS",
+  "Access-Control-Allow-Headers": "x-cron-secret, Content-Type",
+};
+
+/**
+ * Handle OPTIONS request for CORS preflight
+ */
+export async function OPTIONS() {
+  return NextResponse.json({}, { status: 200, headers: corsHeaders });
+}
+
 /**
  * Process next job in queue
  * POST /api/queue/process
  *
- * Triggered by Vercel Cron every minute
- * Security: Requires CRON_SECRET header
+ * Triggered by external cron service or Vercel Cron
+ * Security: Requires CRON_SECRET header (x-cron-secret)
+ * CORS: Enabled for external cron services
  */
 export async function POST(request: NextRequest) {
   try {
@@ -27,12 +42,15 @@ export async function POST(request: NextRequest) {
     if (!process.env.CRON_SECRET) {
       return NextResponse.json(
         { error: "CRON_SECRET not configured" },
-        { status: 500 }
+        { status: 500, headers: corsHeaders }
       );
     }
 
     if (secret !== process.env.CRON_SECRET) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      return NextResponse.json(
+        { error: "Unauthorized" },
+        { status: 401, headers: corsHeaders }
+      );
     }
 
     console.log("[Queue Worker] Checking for jobs...");
@@ -43,7 +61,10 @@ export async function POST(request: NextRequest) {
     if (!jobId) {
       console.log("[Queue Worker] No jobs in queue");
 
-      return NextResponse.json({ message: "No jobs in queue" });
+      return NextResponse.json(
+        { message: "No jobs in queue" },
+        { headers: corsHeaders }
+      );
     }
 
     console.log(`[Queue Worker] Processing job ${jobId}`);
@@ -195,13 +216,16 @@ export async function POST(request: NextRequest) {
           `[Queue Worker] ✅ Coordinator job ${jobId} completed - spawned ${spawnedJobs.length} jobs`
         );
 
-        return NextResponse.json({
-          success: true,
-          jobId,
-          jobType: "coordinator",
-          spawnedJobs: spawnedJobs.length,
-          postsFound: newPosts.length,
-        });
+        return NextResponse.json(
+          {
+            success: true,
+            jobId,
+            jobType: "coordinator",
+            spawnedJobs: spawnedJobs.length,
+            postsFound: newPosts.length,
+          },
+          { headers: corsHeaders }
+        );
       } catch (error) {
         // Mark coordinator job as failed
         const errorMessage =
@@ -221,7 +245,7 @@ export async function POST(request: NextRequest) {
             jobType: "coordinator",
             error: errorMessage,
           },
-          { status: 500 }
+          { status: 500, headers: corsHeaders }
         );
       }
     } else if (job.type === "post_processor") {
@@ -314,14 +338,17 @@ export async function POST(request: NextRequest) {
           `[Queue Worker] ✅ Post_processor job ${jobId} completed - generated idea ${idea.id}`
         );
 
-        return NextResponse.json({
-          success: true,
-          jobId,
-          jobType: "post_processor",
-          ideaId: idea.id,
-          ideaName: idea.title,
-          processingTime: result.processingTimeMs,
-        });
+        return NextResponse.json(
+          {
+            success: true,
+            jobId,
+            jobType: "post_processor",
+            ideaId: idea.id,
+            ideaName: idea.title,
+            processingTime: result.processingTimeMs,
+          },
+          { headers: corsHeaders }
+        );
       } catch (error) {
         // Mark post_processor job as failed
         const errorMessage =
@@ -341,7 +368,7 @@ export async function POST(request: NextRequest) {
             jobType: "post_processor",
             error: errorMessage,
           },
-          { status: 500 }
+          { status: 500, headers: corsHeaders }
         );
       }
     } else {
@@ -356,7 +383,7 @@ export async function POST(request: NextRequest) {
           jobId,
           error: errorMessage,
         },
-        { status: 400 }
+        { status: 400, headers: corsHeaders }
       );
     }
   } catch (error) {
@@ -367,7 +394,7 @@ export async function POST(request: NextRequest) {
         error: "Internal server error",
         message: error instanceof Error ? error.message : "Unknown error",
       },
-      { status: 500 }
+      { status: 500, headers: corsHeaders }
     );
   }
 }
