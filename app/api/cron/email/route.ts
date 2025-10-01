@@ -70,27 +70,17 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     const emailResults = await Promise.allSettled(
       subscriptions.map(async (sub) => {
         try {
-          // Filter ideas by subscriber topics and limit to max 3
-          const filteredIdeas = ideas
-            .filter((idea) => sub.topics.includes(idea.category))
-            .slice(0, 3);
-
-          if (filteredIdeas.length === 0) {
-            console.log(
-              `[Email Cron] No matching topics for ${sub.email}, skipping`
-            );
-
-            return null;
-          }
+          // Send all ideas (topic filtering not implemented yet)
+          const ideasToSend = ideas.slice(0, 3);
 
           console.log(
-            `[Email Cron] Sending ${filteredIdeas.length} ideas to ${sub.email}`
+            `[Email Cron] Sending ${ideasToSend.length} ideas to ${sub.email}`
           );
 
           // Send email
           await sendIdeasDigest({
             to: sub.email,
-            ideas: filteredIdeas.map((idea) => ({
+            ideas: ideasToSend.map((idea) => ({
               id: idea.id.toString(),
               name: idea.title,
               pitch: idea.pitch,
@@ -101,7 +91,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
           });
 
           // Only track ideas as sent AFTER successful email send
-          filteredIdeas.forEach((idea) => sentIdeaIds.add(idea.id));
+          ideasToSend.forEach((idea) => sentIdeaIds.add(idea.id));
 
           // Update last_email_sent
           await supabaseAdmin
@@ -137,9 +127,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
         .update({ is_new: false })
         .in("id", sentIdeaIdsArray);
     } else {
-      console.log(
-        "[Email Cron] No ideas were sent (topic mismatch), keeping all ideas as new"
-      );
+      console.log("[Email Cron] No ideas were sent, keeping all ideas as new");
     }
 
     const emailsSent = emailResults.filter(

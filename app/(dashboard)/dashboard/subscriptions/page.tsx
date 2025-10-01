@@ -8,7 +8,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Bell, Mail, Zap } from "lucide-react";
+import { Bell, Mail, Zap, Info } from "lucide-react";
 import Image from "next/image";
 
 export default function SubscriptionsPage() {
@@ -25,6 +25,23 @@ export default function SubscriptionsPage() {
           <p className="text-muted-foreground mt-1">
             Get weekly product ideas delivered to your inbox
           </p>
+        </div>
+
+        {/* Info Notice */}
+        <div className="rounded-lg border border-blue-200 bg-blue-50 dark:border-blue-900 dark:bg-blue-950/30 p-4">
+          <div className="flex gap-3">
+            <Info className="h-5 w-5 text-blue-600 dark:text-blue-400 shrink-0 mt-0.5" />
+            <div className="space-y-1">
+              <p className="text-sm font-medium text-blue-900 dark:text-blue-100">
+                Topic Filtering Coming Soon
+              </p>
+              <p className="text-sm text-blue-700 dark:text-blue-300">
+                You can select topics during subscription, but filtering is not
+                yet functional. All subscribers currently receive all ideas.
+                This feature will be implemented soon.
+              </p>
+            </div>
+          </div>
         </div>
 
         {/* Features */}
