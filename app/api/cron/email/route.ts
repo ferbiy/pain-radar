@@ -64,6 +64,9 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
 
     console.log(`[Email Cron] Sending to ${subscriptions.length} subscribers`);
 
+    // Track which idea IDs were actually sent to at least one subscriber
+    const sentIdeaIds = new Set<number>();
+
     // Send emails
     const emailResults = await Promise.allSettled(
       subscriptions.map(async (sub) => {
@@ -73,6 +76,9 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
           .slice(0, 3);
 
         if (filteredIdeas.length === 0) return null;
+
+        // Track which ideas are being sent
+        filteredIdeas.forEach((idea) => sentIdeaIds.add(idea.id));
 
         await sendIdeasDigest({
           to: sub.email,
@@ -96,11 +102,23 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       })
     );
 
-    // Mark ideas as sent
-    await supabaseAdmin
-      .from("ideas")
-      .update({ is_new: false })
-      .eq("is_new", true);
+    // Only mark ideas as sent if they were actually included in at least one email
+    if (sentIdeaIds.size > 0) {
+      const sentIdeaIdsArray = Array.from(sentIdeaIds);
+
+      console.log(
+        `[Email Cron] Marking ${sentIdeaIdsArray.length} ideas as sent (IDs: ${sentIdeaIdsArray.join(", ")})`
+      );
+
+      await supabaseAdmin
+        .from("ideas")
+        .update({ is_new: false })
+        .in("id", sentIdeaIdsArray);
+    } else {
+      console.log(
+        "[Email Cron] No ideas were sent (topic mismatch), keeping all ideas as new"
+      );
+    }
 
     const emailsSent = emailResults.filter(
       (r) => r.status === "fulfilled" && r.value !== null
@@ -111,7 +129,9 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     return NextResponse.json({
       success: true,
       emailsSent,
-      ideasIncluded: ideas.length,
+      ideasAvailable: ideas.length,
+      ideasActuallySent: sentIdeaIds.size,
+      markedAsNotNew: sentIdeaIds.size > 0,
     });
   } catch (error) {
     console.error("[Email Cron] Error:", error);
