@@ -109,7 +109,7 @@ const main = {
 const container = {
   backgroundColor: "#ffffff",
   margin: "0 auto",
-  padding: "20px 0 48px",
+  padding: "20px 40px 48px",
   marginBottom: "64px",
   maxWidth: "600px",
 };
@@ -118,20 +118,18 @@ const h1 = {
   color: "#333",
   fontSize: "24px",
   fontWeight: "bold",
-  margin: "40px 0 20px",
-  padding: "0 40px",
+  margin: "20px 0",
 };
 
 const text = {
   color: "#333",
   fontSize: "16px",
   lineHeight: "26px",
-  padding: "0 40px",
   marginBottom: "24px",
 };
 
 const ideaCard = {
-  margin: "24px 40px",
+  margin: "24px 0",
   padding: "24px",
   backgroundColor: "#f9fafb",
   borderRadius: "8px",
@@ -191,7 +189,7 @@ const ctaButton = {
 };
 
 const viewAllSection = {
-  margin: "32px 40px",
+  margin: "32px 0",
   padding: "24px",
   backgroundColor: "#eff6ff",
   borderRadius: "8px",
@@ -217,7 +215,6 @@ const viewAllButton = {
 };
 
 const footer = {
-  padding: "0 40px",
   marginTop: "32px",
   borderTop: "1px solid #e5e7eb",
   paddingTop: "24px",
