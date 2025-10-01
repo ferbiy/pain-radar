@@ -35,36 +35,7 @@ Pain Radar is an intelligent system that monitors Reddit discussions, identifies
 - Reddit API credentials (optional, for authenticated requests)
 - Resend API key (for email functionality)
 - Redis instance (Upstash recommended)
-
-## Environment Variables
-
-Create a `.env.local` file with the following variables:
-
-```env
-# Supabase
-NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
-NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
-SUPABASE_SERVICE_ROLE_KEY=your_service_role_key
-
-# OpenAI
-OPENAI_API_KEY=your_openai_api_key
-
-# Redis (Upstash)
-UPSTASH_REDIS_REST_URL=your_redis_url
-UPSTASH_REDIS_REST_TOKEN=your_redis_token
-
-# Resend (Email)
-RESEND_API_KEY=your_resend_api_key
-
-# Cron Secret (for securing cron endpoints)
-CRON_SECRET=your_secure_random_secret
-
-# Reddit API (Optional)
-REDDIT_CLIENT_ID=your_reddit_client_id
-REDDIT_CLIENT_SECRET=your_reddit_client_secret
-REDDIT_USER_AGENT=your_user_agent
-```
-
+  
 ## Installation
 
 1. **Clone the repository**
@@ -82,7 +53,7 @@ REDDIT_USER_AGENT=your_user_agent
 
 3. **Set up environment variables**
 
-   - Copy `.env.example` to `.env.local` (if provided)
+   - Copy `.env.example` to `.env` (if provided)
    - Fill in all required environment variables
 
 4. **Run database migrations** (if applicable)
