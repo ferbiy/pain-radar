@@ -5,6 +5,7 @@ import IdeasDigestEmail from "@/emails/ideas-digest";
 const resend = new Resend(process.env.RESEND_API_KEY);
 
 interface Idea {
+  id: string;
   name: string;
   pitch: string;
   score: number;
@@ -22,12 +23,14 @@ export async function sendIdeasDigest({
   ideas,
   unsubscribeToken,
 }: SendDigestParams) {
-  const unsubscribeUrl = `${process.env.NEXT_PUBLIC_APP_URL}/api/subscriptions?token=${unsubscribeToken}`;
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+  const unsubscribeUrl = `${appUrl}/api/subscriptions?token=${unsubscribeToken}`;
 
   const html = await render(
     IdeasDigestEmail({
       ideas,
       unsubscribeUrl,
+      appUrl,
     })
   );
 

@@ -26,13 +26,13 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
 
     console.log("[Email Cron] Starting email dispatch job");
 
-    // Get new ideas (created in last 24 hours)
+    // Get new ideas (limit to top 3 by score)
     const { data: ideas, error: ideasError } = await supabaseAdmin
       .from("ideas")
       .select("*")
       .eq("is_new", true)
       .order("score", { ascending: false })
-      .limit(5);
+      .limit(3);
 
     if (ideasError) throw ideasError;
 
@@ -67,16 +67,17 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     // Send emails
     const emailResults = await Promise.allSettled(
       subscriptions.map(async (sub) => {
-        // Filter ideas by subscriber topics
-        const filteredIdeas = ideas.filter((idea) =>
-          sub.topics.includes(idea.category)
-        );
+        // Filter ideas by subscriber topics and limit to max 3
+        const filteredIdeas = ideas
+          .filter((idea) => sub.topics.includes(idea.category))
+          .slice(0, 3);
 
         if (filteredIdeas.length === 0) return null;
 
         await sendIdeasDigest({
           to: sub.email,
           ideas: filteredIdeas.map((idea) => ({
+            id: idea.id.toString(),
             name: idea.title,
             pitch: idea.pitch,
             score: idea.score,
