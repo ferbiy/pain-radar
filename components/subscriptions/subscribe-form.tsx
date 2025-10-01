@@ -4,8 +4,9 @@ import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Bell, CheckCircle, Edit } from "lucide-react";
+import { Bell, CheckCircle, Edit, Loader2 } from "lucide-react";
 import { toast } from "sonner";
+import { useAuth } from "@/hooks/use-auth";
 
 const TOPICS = [
   "Marketing",
@@ -15,35 +16,54 @@ const TOPICS = [
   "Financial",
 ];
 
-interface StoredSubscription {
+interface Subscription {
   email: string;
   topics: string[];
 }
 
 export function SubscribeForm() {
+  const { user } = useAuth();
   const [email, setEmail] = useState("");
   const [selectedTopics, setSelectedTopics] = useState<string[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const [existingSubscription, setExistingSubscription] =
-    useState<StoredSubscription | null>(null);
+    useState<Subscription | null>(null);
   const [isEditing, setIsEditing] = useState(false);
 
-  // Check for existing subscription on mount
+  // Fetch subscription status from database
   useEffect(() => {
-    const stored = localStorage.getItem("subscription");
+    async function fetchSubscription() {
+      if (!user?.email) {
+        setIsLoading(false);
 
-    if (stored) {
+        return;
+      }
+
       try {
-        const subscription = JSON.parse(stored) as StoredSubscription;
+        const response = await fetch(
+          `/api/subscriptions?email=${encodeURIComponent(user.email)}`
+        );
+        const data = await response.json();
 
-        setExistingSubscription(subscription);
-        setEmail(subscription.email);
-        setSelectedTopics(subscription.topics);
-      } catch {
-        // Invalid data, ignore
+        if (response.ok && data.subscribed && data.subscription) {
+          setExistingSubscription(data.subscription);
+          setEmail(data.subscription.email);
+          setSelectedTopics(data.subscription.topics);
+        } else {
+          // Not subscribed, use user's email
+          setEmail(user.email);
+        }
+      } catch (error) {
+        console.error("Failed to fetch subscription:", error);
+        toast.error("Failed to load subscription status");
+      } finally {
+        setIsLoading(false);
       }
     }
-  }, []);
+
+    fetchSubscription();
+  }, [user]);
 
   const toggleTopic = (topic: string) => {
     setSelectedTopics((prev) =>
@@ -65,13 +85,12 @@ export function SubscribeForm() {
       const data = await response.json();
 
       if (response.ok) {
-        // Store subscription in localStorage
-        const subscription: StoredSubscription = {
+        // Refresh subscription from database
+        const subscription: Subscription = {
           email,
           topics: selectedTopics,
         };
 
-        localStorage.setItem("subscription", JSON.stringify(subscription));
         setExistingSubscription(subscription);
         setIsEditing(false);
 
@@ -103,6 +122,18 @@ export function SubscribeForm() {
     }
     setIsEditing(false);
   };
+
+  // Show loading state
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center py-8">
+        <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+        <span className="ml-2 text-muted-foreground">
+          Loading subscription status...
+        </span>
+      </div>
+    );
+  }
 
   // Show existing subscription if subscribed and not editing
   if (existingSubscription && !isEditing) {
@@ -185,8 +216,8 @@ export function SubscribeForm() {
           {isSubmitting
             ? "Saving..."
             : existingSubscription
-            ? "Update"
-            : "Subscribe"}
+              ? "Update"
+              : "Subscribe"}
         </Button>
         {existingSubscription && (
           <Button type="button" onClick={handleCancel} variant="outline">

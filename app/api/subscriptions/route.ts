@@ -56,13 +56,49 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
 }
 
 /**
- * Unsubscribe from email notifications (via email link)
- * GET /api/subscriptions?token=xxx
+ * Get subscription status or unsubscribe via email link
+ * GET /api/subscriptions?email=xxx - Check subscription status
+ * GET /api/subscriptions?token=xxx - Unsubscribe via email link
  */
 export async function GET(request: NextRequest): Promise<NextResponse> {
   try {
     const token = request.nextUrl.searchParams.get("token");
+    const email = request.nextUrl.searchParams.get("email");
 
+    // If email is provided, return subscription status
+    if (email) {
+      const { data, error } = await supabaseAdmin
+        .from("subscriptions")
+        .select("*")
+        .eq("email", email)
+        .maybeSingle();
+
+      if (error) {
+        console.error("[Subscriptions] Error fetching subscription:", error);
+
+        return NextResponse.json(
+          { error: "Failed to fetch subscription" },
+          { status: 500 }
+        );
+      }
+
+      if (!data) {
+        return NextResponse.json({ subscribed: false }, { status: 200 });
+      }
+
+      return NextResponse.json(
+        {
+          subscribed: true,
+          subscription: {
+            email: data.email,
+            topics: data.topics,
+          },
+        },
+        { status: 200 }
+      );
+    }
+
+    // Handle unsubscribe token
     if (!token) {
       return new NextResponse(
         `
