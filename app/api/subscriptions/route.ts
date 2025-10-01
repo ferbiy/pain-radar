@@ -95,13 +95,15 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
       );
     }
 
-    // Unsubscribe user
+    // Delete subscription (don't just mark as inactive to allow re-subscribing)
     const { error } = await supabaseAdmin
       .from("subscriptions")
-      .update({ is_active: false })
+      .delete()
       .eq("unsubscribe_token", token);
 
     if (error) throw error;
+
+    console.log(`[Subscriptions] Deleted subscription with token: ${token}`);
 
     // Return success page
     return new NextResponse(
@@ -186,12 +188,17 @@ export async function DELETE(request: NextRequest): Promise<NextResponse> {
       );
     }
 
+    // Delete subscription (don't just mark as inactive to allow re-subscribing)
     const { error } = await supabaseAdmin
       .from("subscriptions")
-      .update({ is_active: false })
+      .delete()
       .eq("unsubscribe_token", token);
 
     if (error) throw error;
+
+    console.log(
+      `[Subscriptions] Deleted subscription via API with token: ${token}`
+    );
 
     return NextResponse.json({ success: true });
   } catch (error) {

@@ -46,11 +46,10 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
 
     console.log(`[Email Cron] Found ${ideas.length} new ideas`);
 
-    // Get active subscriptions
+    // Get all subscriptions (no need to filter by is_active since we delete on unsubscribe)
     const { data: subscriptions, error: subsError } = await supabaseAdmin
       .from("subscriptions")
-      .select("*")
-      .eq("is_active", true);
+      .select("*");
 
     if (subsError) throw subsError;
 
@@ -70,35 +69,58 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     // Send emails
     const emailResults = await Promise.allSettled(
       subscriptions.map(async (sub) => {
-        // Filter ideas by subscriber topics and limit to max 3
-        const filteredIdeas = ideas
-          .filter((idea) => sub.topics.includes(idea.category))
-          .slice(0, 3);
+        try {
+          // Filter ideas by subscriber topics and limit to max 3
+          const filteredIdeas = ideas
+            .filter((idea) => sub.topics.includes(idea.category))
+            .slice(0, 3);
 
-        if (filteredIdeas.length === 0) return null;
+          if (filteredIdeas.length === 0) {
+            console.log(
+              `[Email Cron] No matching topics for ${sub.email}, skipping`
+            );
 
-        // Track which ideas are being sent
-        filteredIdeas.forEach((idea) => sentIdeaIds.add(idea.id));
+            return null;
+          }
 
-        await sendIdeasDigest({
-          to: sub.email,
-          ideas: filteredIdeas.map((idea) => ({
-            id: idea.id.toString(),
-            name: idea.title,
-            pitch: idea.pitch,
-            score: idea.score,
-            category: idea.category,
-          })),
-          unsubscribeToken: sub.unsubscribe_token,
-        });
+          console.log(
+            `[Email Cron] Sending ${filteredIdeas.length} ideas to ${sub.email}`
+          );
 
-        // Update last_email_sent
-        await supabaseAdmin
-          .from("subscriptions")
-          .update({ last_email_sent: new Date().toISOString() })
-          .eq("id", sub.id);
+          // Send email
+          await sendIdeasDigest({
+            to: sub.email,
+            ideas: filteredIdeas.map((idea) => ({
+              id: idea.id.toString(),
+              name: idea.title,
+              pitch: idea.pitch,
+              score: idea.score,
+              category: idea.category,
+            })),
+            unsubscribeToken: sub.unsubscribe_token,
+          });
 
-        return sub.email;
+          // Only track ideas as sent AFTER successful email send
+          filteredIdeas.forEach((idea) => sentIdeaIds.add(idea.id));
+
+          // Update last_email_sent
+          await supabaseAdmin
+            .from("subscriptions")
+            .update({ last_email_sent: new Date().toISOString() })
+            .eq("id", sub.id);
+
+          console.log(
+            `[Email Cron] ✅ Email sent successfully to ${sub.email}`
+          );
+
+          return sub.email;
+        } catch (error) {
+          console.error(
+            `[Email Cron] ❌ Failed to send to ${sub.email}:`,
+            error
+          );
+          throw error;
+        }
       })
     );
 
